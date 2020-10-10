@@ -17,7 +17,7 @@ const myLibraryStore = Reflux.createStore({
   abortFetchData: undefined,
   previousPath: null,
   PAGE_SIZE: 100,
-  DEFAULT_ORDER_COLUMN: ASSETS_TABLE_COLUMNS.get('date-modified'),
+  DEFAULT_ORDER_COLUMN: ASSETS_TABLE_COLUMNS.get('icon-status'),
 
   init() {
     this.fetchDataDebounced = _.debounce(this.fetchData.bind(true), 2500);
