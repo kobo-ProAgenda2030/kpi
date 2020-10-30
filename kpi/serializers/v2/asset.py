@@ -496,7 +496,7 @@ class AssetListSerializer(AssetSerializer):
                   'data',
                   'subscribers_count',
                   'status',
-                  'access_type',
+                  'access_types',
                   'children'
                   )
 
