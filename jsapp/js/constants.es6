@@ -68,7 +68,6 @@ export const MODAL_TYPES = {
   FORM_TRANSLATIONS_TABLE: 'form-translation-table',
   ASSET_TAGS: 'asset-tags',
   ENCRYPT_FORM: 'encrypt-form'
-
 };
 
 export const PROJECT_SETTINGS_CONTEXTS = {
