@@ -32,6 +32,7 @@ from kpi.constants import (
     PERM_PARTIAL_SUBMISSIONS,
 )
 from kpi.utils.log import logging
+from kpi.utils.sheet_converter import convert_xls_to_dict
 from kpi.utils.strings import to_str
 from ..fields import KpiUidField
 from ..model_utils import create_assets, _load_library_content, \
@@ -653,7 +654,7 @@ class ExportTask(ImportExportTask):
 
 def _b64_xls_to_dict(base64_encoded_upload):
     decoded_str = base64.b64decode(base64_encoded_upload)
-    survey_dict = xls2json_backends.xls_to_dict(BytesIO(decoded_str))
+    survey_dict = convert_xls_to_dict(BytesIO(decoded_str))
     return _strip_header_keys(survey_dict)
 
 
