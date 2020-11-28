@@ -49,6 +49,7 @@ import {
 } from 'utils';
 import LibrarySearchableList from './lists/library';
 import FormsSearchableList from './lists/forms';
+import {TicketSystemBody} from 'groots-kpi/lib/app/ticket-system'
 
 class App extends React.Component {
   constructor(props) {
@@ -308,6 +309,10 @@ export var routes = (
       <Route path='*' component={FormNotFound} />
     </Route>
 
+    <Route path='ticketSystem'>
+      <Route path='home' component={TicketSystemBody} />
+      <Route path='*' component={<div>main</div>} />
+    </Route>
     <Route path='*' component={SectionNotFound} />
   </Route>
 );

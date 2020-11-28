@@ -25,6 +25,7 @@ import {MODAL_TYPES} from '../constants';
 import {assign} from 'utils';
 
 import SidebarFormsList from '../lists/sidebarForms';
+import { TicketSystemSideBar } from 'groots-kpi/lib/app/ticket-system';
 
 class FormSidebar extends Reflux.Component {
   constructor(props){
@@ -141,12 +142,15 @@ class Drawer extends Reflux.Component {
         <bem.KDrawer__primaryIcons>
           <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />
           <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />
+          <DrawerLink label={t('Ticke System')} linkto='/ticketSystem' ki-icon='tickets' />
         </bem.KDrawer__primaryIcons>
 
         <bem.KDrawer__sidebar>
           { this.isLibrary()
             ? <LibrarySidebar />
-            : <FormSidebar />
+              :this.isTicketSystem()
+              ?<TicketSystemSideBar/>
+                :<FormSidebar />
           }
         </bem.KDrawer__sidebar>
 

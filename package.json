@@ -73,7 +73,11 @@
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0",
     "webpack-extract-translation-keys-plugin": "^5.0.2",
-    "zxcvbn": "^4.4.2"
+    "zxcvbn": "^4.4.2",
+    "@material-ui/core": "^4.11.1",
+    "@material-ui/icons": "^4.9.1",
+    "rxjs": "^6.6.3",
+    "groots-kpi": "https://github.com/NexionBolivia/groots-kpi/releases/download/v1.1.1/groots-kpi.tgz"
   },
   "scripts": {
     "build": "webpack --config webpack/prod.config.js --colors",

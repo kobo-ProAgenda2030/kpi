@@ -735,6 +735,9 @@ mixins.contextRouter = {
       return true;
 
     return this.context.router.isActive(`/forms/${assetid}/edit`);
+  },
+  isTicketSystem () {
+    return this.context.router.isActive('ticketSystem');
   }
 };
 
