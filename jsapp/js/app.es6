@@ -50,7 +50,7 @@ import {
 import LibrarySearchableList from './lists/library';
 import FormsSearchableList from './lists/forms';
 import {PeopleBody} from 'groots-kpi/lib/people/app/people_body'
-import {ROOT_URL} from './constants';
+import {SUPPORT_API_BASE_URL} from './support-constans';
 
 class App extends React.Component {
   constructor(props) {
@@ -310,7 +310,7 @@ export var routes = (
       <Route path='*' component={FormNotFound} />
     </Route>
 
-    <Route path='dashboard' component={()=>(<PeopleBody baseURL={"http://localhost:8500/dummy/dashboard"}/>)}/>
+    <Route path='dashboard' component={()=>(<PeopleBody baseURL={`${SUPPORT_API_BASE_URL}/dummy/dashboard`}/>)}/>
     <Route path='*' component={SectionNotFound} />
   </Route>
 );
