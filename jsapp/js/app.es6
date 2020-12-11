@@ -50,7 +50,7 @@ import {
 import LibrarySearchableList from './lists/library';
 import FormsSearchableList from './lists/forms';
 import {PeopleBody} from 'groots-kpi/lib/people/app/people_body'
-import {SUPPORT_API_BASE_URL} from './support-constans';
+import {SUPPORT_API_BASE_URL} from './support-api-constants';
 
 class App extends React.Component {
   constructor(props) {
