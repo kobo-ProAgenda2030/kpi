@@ -8,7 +8,7 @@ on:
 
 jobs:
   docker-build-push:
-    name: 
+    name: Build KPI and push to DockerHub
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
