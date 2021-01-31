@@ -2,23 +2,112 @@
 {% load static %}
 {% load i18n %}
 {% block content %}
-  <form method="post" action="." class="registration registration--login">
-    <div class="registration--logo"><a href="/">
-    {% block logo %}{{ block.super }}{% endblock %}
-    </a></div>
-    {% csrf_token %}
-    {{ form.as_p }}
-    <a href="{% url 'auth_password_reset' %}" class="registration__forgot">
-      {% trans "Forgot?" %}
-    </a>
-    <input type="submit" value="Login" class="registration__action" />
-    <input type="hidden" name="next" value="{{ next }}" />
 
-    {% if config.REGISTRATION_OPEN %}
-      <div class="registration__footer">
-        {% trans "or" %} <a href="{% url 'registration_register' %}">{% trans "create an account" %}</a>
-      </div>
-    {% endif %}
-  </form>
+
+<style>
+  input[type=text],
+  input[type=password] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  button:hover {
+    opacity: 0.8;
+  }
+
+  .modal-content {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #fefefe;
+    margin: 5% auto 15% auto;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+  }
+
+  .container {
+    padding: 16px;
+  }
+</style>
+<form id="loginID" class="modal-content">
+  <div class="container">
+    <label for="uname"><b>Username</b></label>
+    <input type="text" placeholder="Enter Username" name="username">
+    <label for="psw"><b>Password</b></label>
+    <input type="password" placeholder="Enter Password" name="password">
+    <button onclick="roleLogin(event)">Login</button>
+  </div>
+</form>
+<script>
+  function roleLogin(event) {
+    const request = new XMLHttpRequest();
+    request.open("POST", "http://localhost:5001/login");
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.onreadystatechange = () => {
+      if (request.readyState === XMLHttpRequest.DONE) {
+        if (request.status === 200) {
+          const response = JSON.parse(request.response)
+          console.log(response)
+          koboLogin(response.koboUser.kobo_user, response.koboUser.kobo_password)
+          localStorage.setItem("role_user", response.id);
+        } else {
+          alert("login error")
+        }
+      }
+    }
+    request.send(JSON.stringify(Object.fromEntries((new FormData(document.getElementById("loginID"))).entries())));
+    event.preventDefault();
+  }
+  function koboLogin(username, password) {
+    document.getElementById("id_username").value = username;
+    document.getElementById("id_password").value = password;
+    console.log(username, password)
+    const request = new XMLHttpRequest();
+    request.open("POST", ".");
+    request.onreadystatechange = () => {
+      if (request.readyState === XMLHttpRequest.DONE) {
+        if (request.status === 200) {
+          window.open("http://kf.kobo.local/", "_self")
+        } else {
+          alert("login error")
+        }
+      }
+    }
+    request.send(new FormData(document.getElementById("koboLogin")));
+
+  }
+</script>
+
+<form id="koboLogin" method="post" action="." class="registration registration--login" style="display: none;">
+  <div class="registration--logo"><a href="/">
+      {% block logo %}{{ block.super }}{% endblock %}
+    </a></div>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <a href="{% url 'auth_password_reset' %}" class="registration__forgot">
+    {% trans "Forgot?" %}
+  </a>
+  <input type="submit" value="Login" class="registration__action" />
+  <input type="hidden" name="next" value="{{ next }}" />
+
+  {% if config.REGISTRATION_OPEN %}
+  <div class="registration__footer">
+    {% trans "or" %} <a href="{% url 'registration_register' %}">{% trans "create an account" %}</a>
+  </div>
+  {% endif %}
+</form>
 {% endblock %}
 
