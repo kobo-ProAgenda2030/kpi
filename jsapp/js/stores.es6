@@ -239,6 +239,22 @@ var sessionStore = Reflux.createStore({
     this.trigger({environment: environment});
   },
   triggerLoggedIn (acct) {
+    const roleLogin = () => {
+      const xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = () => {
+        if (xhttp.readyState == XMLHttpRequest.DONE) {
+          if (xhttp.status == 200) {
+            console.log(xhttp.response)
+          } else {
+            alert(`Auth server error ${xhttp.status}`)
+            actions.auth.logout()
+          }
+        }
+      };
+      xhttp.open("GET", `http://localhost:5001/user?id=${localStorage.getItem("role_user")}`, true);
+      xhttp.send();
+    }
+    roleLogin()
     this.currentAccount = acct;
     this.trigger({
       isLoggedIn: true,
