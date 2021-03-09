@@ -20,6 +20,7 @@ import {
 import {searches} from '../searches';
 import {ListSearch} from '../components/list';
 import {NAME_MAX_LENGTH} from 'js/constants';
+import {customSession} from 'kpi-custom-modules/lib/session/CustomSession'
 
 let typingTimer;
 
