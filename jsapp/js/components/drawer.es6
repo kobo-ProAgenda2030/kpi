@@ -25,8 +25,8 @@ import {MODAL_TYPES} from '../constants';
 import {assign} from 'utils';
 
 import SidebarFormsList from '../lists/sidebarForms';
-import { PeopleSideBar } from 'groots-kpi/lib/people/app/people_side_bar';
 
+import {customSession} from 'kpi-custom-modules/lib/session/CustomSession'
 class FormSidebar extends Reflux.Component {
   constructor(props){
     super(props);
@@ -137,23 +137,25 @@ class Drawer extends Reflux.Component {
     ];
   }
   render () {
+    const showExtraMenu=(customSession.hasAccess("forms")||customSession.hasAccess("library"))&&(this.isLibrary()||this.isForms())
     return (
-      <bem.KDrawer>
-        <bem.KDrawer__primaryIcons>
-          <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />
-          <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />
-          <DrawerLink label={t('CAPyS')} linkto='/dashboard' ki-icon='people' />
+      <bem.KDrawer style={{ width: showExtraMenu ? 270 : 58 }}>
+        <bem.KDrawer__primaryIcons>          
+          {customSession.hasAccess("forms") && <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />}
+          {customSession.hasAccess("library") && <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />}
+          {customSession.hasAccess("users") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
+          {customSession.hasAccess("organizations") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
         </bem.KDrawer__primaryIcons>
-
+        {showExtraMenu&&
         <bem.KDrawer__sidebar>
-          { this.isLibrary()
+          { this.isLibrary() && customSession.hasAccess("library")
             ? <LibrarySidebar />
-              : this.isForms()?
+              : this.isForms() && customSession.hasAccess("forms")?
                 <FormSidebar />
-                : <PeopleSideBar/>
+                : <div/>
           }
         </bem.KDrawer__sidebar>
-
+        }
         <bem.KDrawer__secondaryIcons>
           { stores.session.currentAccount &&
             <IntercomHelpBubble/>

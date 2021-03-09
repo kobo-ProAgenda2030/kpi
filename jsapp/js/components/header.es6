@@ -247,6 +247,7 @@ class MainHeader extends Reflux.Component {
       formTitleNameMods.push('long');
     }
 
+    const showExtraMenu=(customSession.hasAccess("forms")||customSession.hasAccess("library"))
     return (
         <header className='mdl-layout__header'>
           <div className='mdl-layout__header-row'>
@@ -258,12 +259,12 @@ class MainHeader extends Reflux.Component {
                 <bem.Header__logo />
               </a>
             </span>
-            { this.isFormList() &&
+            { (this.isFormList() && showExtraMenu) &&
               <div className='mdl-layout__header-searchers'>
                 <ListSearch searchContext={this.state.formFiltersContext} placeholderText={t('Search Projects')} />
               </div>
             }
-            { this.isLibrary() &&
+            { (this.isLibrary() && showExtraMenu) &&
               <div className='mdl-layout__header-searchers'>
                 <ListSearch searchContext={this.state.libraryFiltersContext} placeholderText={t('Search Library')} />
               </div>
