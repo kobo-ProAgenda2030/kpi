@@ -49,10 +49,11 @@ import {
 } from 'utils';
 import LibrarySearchableList from './lists/library';
 import FormsSearchableList from './lists/forms';
-import {OrganizationBody} from 'kpi-custom-modules/lib/modules/organizations/app/OrganizationBody';
-import {UserBody} from 'kpi-custom-modules/lib/modules/users/app/UserBody';
+import {OrganizationBody} from 'kpi-custom-modules/lib/modules/organizations/OrganizationScreen';
+import {UserBody} from 'kpi-custom-modules/lib/modules/users/UserScreen';
 import {SUPPORT_API_BASE_URL} from './support-api-constants';
-import {customSession} from 'kpi-custom-modules/lib/session/CustomSession'
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -103,7 +104,7 @@ class App extends React.Component {
       pageWrapperModifiers[`is-modal-${this.state.pageState.modal.type}`] = true;
     }
 
-    const showExtraMenu=(customSession.hasAccess("forms")||customSession.hasAccess("library"))&&(this.isLibrary()||this.isForms())
+    const showExtraMenu=(customSessionInstance.hasAccess("forms")||customSessionInstance.hasAccess("library"))&&(this.isLibrary()||this.isForms())
     return (
       <DocumentTitle title='KoBoToolbox'>
         <React.Fragment>
@@ -248,11 +249,11 @@ class SectionNotFound extends React.Component {
   }
 }
 
-export var routes = (
+export var routes =()=> (
   <Route name='home' path='/' component={App}>
     <Route path='account-settings' component={AccountSettings} />
     <Route path='change-password' component={ChangePassword} />
-  {customSession.hasAccess("library") &&
+  {customSessionInstance.hasAccess("library") &&
     <Route path='library' >
       <Route path='new' component={AddToLibrary} />
       <Route path='new/template' component={AddToLibrary} />
@@ -266,7 +267,7 @@ export var routes = (
     </Route>
 }
     <IndexRedirect to='forms' />
-{customSession.hasAccess("forms") &&
+{customSessionInstance.hasAccess("forms") &&
     <Route path='forms' >
       <IndexRoute component={FormsSearchableList} />
 
@@ -314,10 +315,10 @@ export var routes = (
     </Route>
 }
 
-{customSession.hasAccess("users") &&
+{customSessionInstance.hasAccess("users") &&
     <Route path='users' component={()=>(<UserBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
 }
-{customSession.hasAccess("organizations") &&
+{customSessionInstance.hasAccess("organizations") &&
     <Route path='organizations' component={()=>(<OrganizationBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
 }
     <Route path='*' component={SectionNotFound} />

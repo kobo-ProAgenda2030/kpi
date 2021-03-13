@@ -70,7 +70,7 @@
       if (request.readyState === XMLHttpRequest.DONE) {
         if (request.status === 200) {
           const response = JSON.parse(request.response)
-          localStorage.setItem("customSession", request.response);
+          localStorage.setItem("sessionToken", response.authToken);
           koboLogin()
         } else {
           alert("login error")

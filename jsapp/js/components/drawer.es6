@@ -26,7 +26,8 @@ import {assign} from 'utils';
 
 import SidebarFormsList from '../lists/sidebarForms';
 
-import {customSession} from 'kpi-custom-modules/lib/session/CustomSession'
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
+
 class FormSidebar extends Reflux.Component {
   constructor(props){
     super(props);
@@ -137,20 +138,20 @@ class Drawer extends Reflux.Component {
     ];
   }
   render () {
-    const showExtraMenu=(customSession.hasAccess("forms")||customSession.hasAccess("library"))&&(this.isLibrary()||this.isForms())
+    const showExtraMenu=(customSessionInstance.hasAccess("forms")||customSessionInstance.hasAccess("library"))&&(this.isLibrary()||this.isForms())
     return (
       <bem.KDrawer style={{ width: showExtraMenu ? 270 : 58 }}>
         <bem.KDrawer__primaryIcons>          
-          {customSession.hasAccess("forms") && <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />}
-          {customSession.hasAccess("library") && <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />}
-          {customSession.hasAccess("users") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
-          {customSession.hasAccess("organizations") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
+          {customSessionInstance.hasAccess("forms") && <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />}
+          {customSessionInstance.hasAccess("library") && <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />}
+          {customSessionInstance.hasAccess("users") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
+          {customSessionInstance.hasAccess("organizations") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
         </bem.KDrawer__primaryIcons>
         {showExtraMenu&&
         <bem.KDrawer__sidebar>
-          { this.isLibrary() && customSession.hasAccess("library")
+          { this.isLibrary() && customSessionInstance.hasAccess("library")
             ? <LibrarySidebar />
-              : this.isForms() && customSession.hasAccess("forms")?
+              : this.isForms() && customSessionInstance.hasAccess("forms")?
                 <FormSidebar />
                 : <div/>
           }

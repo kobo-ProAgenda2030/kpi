@@ -20,7 +20,7 @@ import {
 import {searches} from '../searches';
 import {ListSearch} from '../components/list';
 import {NAME_MAX_LENGTH} from 'js/constants';
-import {customSession} from 'kpi-custom-modules/lib/session/CustomSession'
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession';
 
 let typingTimer;
 
@@ -248,7 +248,7 @@ class MainHeader extends Reflux.Component {
       formTitleNameMods.push('long');
     }
 
-    const showExtraMenu=(customSession.hasAccess("forms")||customSession.hasAccess("library"))
+    const showExtraMenu=(customSessionInstance.hasAccess("forms")||customSessionInstance.hasAccess("library"))
     return (
         <header className='mdl-layout__header'>
           <div className='mdl-layout__header-row'>
