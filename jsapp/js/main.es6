@@ -68,16 +68,6 @@ customSessionInstance.load(services)
     });
     
 })
-.catch((error) => {
-  return fetch(`${window.location.protocol}//${window.location.host}`).then(
-    (response) => {
-      if (localStorage.getItem("sessionToken") !== null) {
-        localStorage.removeItem("sessionToken");
-        window.location.href = ROOT_URL;
-      }
-    }
-  );
+.catch((error)=>{
+  alert(`${error}`)
 })
-.catch((error) => {
-  console.log(error);
-});
