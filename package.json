@@ -32,7 +32,7 @@
     "jquery": "^3.5.1",
     "jquery-ui": "1.12.1",
     "jszip": "^3.4.0",
-    "kpi-custom-modules": "https://github.com/NexionBolivia/kpi-custom-modules/releases/download/v2.5.2/kpi-custom-modules.tgz",
+    "kpi-custom-modules": "https://github.com/NexionBolivia/kpi-custom-modules/releases/download/v2.5.3/kpi-custom-modules.tgz",
     "leaflet": "^1.6.0",
     "leaflet.heat": "^0.2.0",
     "leaflet.markercluster": "^1.4.1",

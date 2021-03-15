@@ -36,6 +36,8 @@
     width: 80%;
     max-width: 500px;
     border-radius: 10px;
+    display: flex;
+    justify-content: center;
   }
 
   .container {
@@ -48,9 +50,43 @@
     align-items: center;
     color: black;
   }
+
+  .loader {
+    display: none;
+    margin: 50px;
+    border: 16px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 16px solid #3498db;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 2s linear infinite;
+    /* Safari */
+    animation: spin 2s linear infinite;
+  }
+
+  /* Safari */
+  @-webkit-keyframes spin {
+    0% {
+      -webkit-transform: rotate(0deg);
+    }
+
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
 </style>
 <form id="loginID" class="modal-content">
-  <div class="container">
+  <div id="loginFormContainer" class="container">
     <label for="uname"><b>Username</b></label>
     <input type="text" placeholder="Enter Username" name="username" id="custom_username">
     <label for="psw"><b>Password</b></label>
@@ -60,9 +96,22 @@
       o <a href="/accounts/register/">Crear una cuenta</a>
     </div>
   </div>
+  <div id="loaderContainer" class="loader"></div>
 </form>
 <script>
+  function setLoading(show) {
+    var loginForm = document.getElementById("loginFormContainer");
+    var loaderContainer = document.getElementById("loaderContainer");
+    if (show) {
+      loginForm.style.display = "none";
+      loaderContainer.style.display = "block";
+    } else {
+      loginForm.style.display = "block";
+      loaderContainer.style.display = "none";
+    }
+  }
   function roleLogin(event) {
+    setLoading(true)
     const request = new XMLHttpRequest();
     request.open("POST", "http://localhost:63253/login");
     request.setRequestHeader('Content-Type', 'application/json');
@@ -74,7 +123,7 @@
           koboLogin()
         } else {
           alert("login error")
-          window.open("http://kf.kobo.local/", "_self")
+          setLoading(false)
         }
       }
     }
@@ -90,10 +139,10 @@
     request.onreadystatechange = () => {
       if (request.readyState === XMLHttpRequest.DONE) {
         if (request.status === 200) {
-          window.open("http://kf.kobo.local/", "_self")
+          window.location.href = `${window.location.protocol}//${window.location.host}`;
         } else {
           alert("login error")
-          window.open("http://kf.kobo.local/", "_self")
+          setLoading(false)
         }
       }
     }
