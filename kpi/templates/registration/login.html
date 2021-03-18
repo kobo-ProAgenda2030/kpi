@@ -2,23 +2,171 @@
 {% load static %}
 {% load i18n %}
 {% block content %}
-  <form method="post" action="." class="registration registration--login">
-    <div class="registration--logo"><a href="/">
-    {% block logo %}{{ block.super }}{% endblock %}
+
+
+<style>
+  input[type=text],
+  input[type=password] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  button:hover {
+    opacity: 0.8;
+  }
+
+  .modal-content {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #fefefe;
+    margin: 5% auto 15% auto;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    padding: 16px;
+  }
+
+  .newAccount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: black;
+  }
+
+  .loader {
+    display: none;
+    margin: 50px;
+    border: 16px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 16px solid #3498db;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 2s linear infinite;
+    /* Safari */
+    animation: spin 2s linear infinite;
+  }
+
+  /* Safari */
+  @-webkit-keyframes spin {
+    0% {
+      -webkit-transform: rotate(0deg);
+    }
+
+    100% {
+      -webkit-transform: rotate(360deg);
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+<form id="loginID" class="modal-content">
+  <div id="loginFormContainer" class="container">
+    <label for="uname"><b>Username</b></label>
+    <input type="text" placeholder="Enter Username" name="username" id="custom_username">
+    <label for="psw"><b>Password</b></label>
+    <input type="password" placeholder="Enter Password" name="password" id="custom_password">
+    <button onclick="roleLogin(event)">Login</button>
+    <div class="newAccount">
+      o <a href="/accounts/register/">Crear una cuenta</a>
+    </div>
+  </div>
+  <div id="loaderContainer" class="loader"></div>
+</form>
+<script>
+  function setLoading(show) {
+    var loginForm = document.getElementById("loginFormContainer");
+    var loaderContainer = document.getElementById("loaderContainer");
+    if (show) {
+      loginForm.style.display = "none";
+      loaderContainer.style.display = "block";
+    } else {
+      loginForm.style.display = "block";
+      loaderContainer.style.display = "none";
+    }
+  }
+  function roleLogin(event) {
+    setLoading(true)
+    const request = new XMLHttpRequest();
+    request.open("POST", "https://support.nexion-dev.tk/login");
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.onreadystatechange = () => {
+      if (request.readyState === XMLHttpRequest.DONE) {
+        if (request.status === 200) {
+          const response = JSON.parse(request.response)
+          localStorage.setItem("sessionToken", response.authToken);
+          koboLogin()
+        } else {
+          alert("login error")
+          setLoading(false)
+        }
+      }
+    }
+    request.send(JSON.stringify(Object.fromEntries((new FormData(document.getElementById("loginID"))).entries())));
+    event.preventDefault();
+  }
+  function koboLogin() {
+    document.getElementById("id_username").value = document.getElementById("custom_username").value;
+    document.getElementById("id_password").value = document.getElementById("custom_password").value;
+
+    const request = new XMLHttpRequest();
+    request.open("POST", ".");
+    request.onreadystatechange = () => {
+      if (request.readyState === XMLHttpRequest.DONE) {
+        if (request.status === 200) {
+          window.location.href = `${window.location.protocol}//${window.location.host}`;
+        } else {
+          alert("login error")
+          setLoading(false)
+        }
+      }
+    }
+    request.send(new FormData(document.getElementById("koboLogin")));
+
+  }
+</script>
+
+<form id="koboLogin" method="post" action="." class="registration registration--login" style="display: none;">
+  <div class="registration--logo"><a href="/">
+      {% block logo %}{{ block.super }}{% endblock %}
     </a></div>
-    {% csrf_token %}
-    {{ form.as_p }}
-    <a href="{% url 'auth_password_reset' %}" class="registration__forgot">
-      {% trans "Forgot?" %}
-    </a>
-    <input type="submit" value="Login" class="registration__action" />
-    <input type="hidden" name="next" value="{{ next }}" />
+  {% csrf_token %}
+  {{ form.as_p }}
+  <a href="{% url 'auth_password_reset' %}" class="registration__forgot">
+    {% trans "Forgot?" %}
+  </a>
+  <input type="submit" value="Login" class="registration__action" />
+  <input type="hidden" name="next" value="{{ next }}" />
 
-    {% if config.REGISTRATION_OPEN %}
-      <div class="registration__footer">
-        {% trans "or" %} <a href="{% url 'registration_register' %}">{% trans "create an account" %}</a>
-      </div>
-    {% endif %}
-  </form>
+  {% if config.REGISTRATION_OPEN %}
+  <div class="registration__footer">
+    {% trans "or" %} <a href="{% url 'registration_register' %}">{% trans "create an account" %}</a>
+  </div>
+  {% endif %}
+</form>
 {% endblock %}
-
