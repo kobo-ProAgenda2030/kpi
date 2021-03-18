@@ -248,7 +248,7 @@ class MainHeader extends Reflux.Component {
       formTitleNameMods.push('long');
     }
 
-    const showExtraMenu=(customSessionInstance.hasAccess("forms")||customSessionInstance.hasAccess("library"))
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))
     return (
         <header className='mdl-layout__header'>
           <div className='mdl-layout__header-row'>

@@ -138,20 +138,20 @@ class Drawer extends Reflux.Component {
     ];
   }
   render () {
-    const showExtraMenu=(customSessionInstance.hasAccess("forms")||customSessionInstance.hasAccess("library"))&&(this.isLibrary()||this.isForms())
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
     return (
       <bem.KDrawer style={{ width: showExtraMenu ? 270 : 58 }}>
         <bem.KDrawer__primaryIcons>          
-          {customSessionInstance.hasAccess("forms") && <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />}
-          {customSessionInstance.hasAccess("library") && <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />}
-          {customSessionInstance.hasAccess("users") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
-          {customSessionInstance.hasAccess("organizations") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
+          {customSessionInstance.hasAccess("forms_view") && <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />}
+          {customSessionInstance.hasAccess("library_view") && <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />}
+          {customSessionInstance.hasAccess("users_view") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
+          {customSessionInstance.hasAccess("organizations_view") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
         </bem.KDrawer__primaryIcons>
         {showExtraMenu&&
         <bem.KDrawer__sidebar>
-          { this.isLibrary() && customSessionInstance.hasAccess("library")
+          { this.isLibrary() && customSessionInstance.hasAccess("library_view")
             ? <LibrarySidebar />
-              : this.isForms() && customSessionInstance.hasAccess("forms")?
+              : this.isForms() && customSessionInstance.hasAccess("forms_view")?
                 <FormSidebar />
                 : <div/>
           }

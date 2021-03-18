@@ -104,7 +104,7 @@ class App extends React.Component {
       pageWrapperModifiers[`is-modal-${this.state.pageState.modal.type}`] = true;
     }
 
-    const showExtraMenu=(customSessionInstance.hasAccess("forms")||customSessionInstance.hasAccess("library"))&&(this.isLibrary()||this.isForms())
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
     return (
       <DocumentTitle title='KoBoToolbox'>
         <React.Fragment>
@@ -253,7 +253,7 @@ export var routes =()=> (
   <Route name='home' path='/' component={App}>
     <Route path='account-settings' component={AccountSettings} />
     <Route path='change-password' component={ChangePassword} />
-  {customSessionInstance.hasAccess("library") &&
+  {customSessionInstance.hasAccess("library_view") &&
     <Route path='library' >
       <Route path='new' component={AddToLibrary} />
       <Route path='new/template' component={AddToLibrary} />
@@ -267,7 +267,7 @@ export var routes =()=> (
     </Route>
 }
     <IndexRedirect to='forms' />
-{customSessionInstance.hasAccess("forms") &&
+{customSessionInstance.hasAccess("forms_view") &&
     <Route path='forms' >
       <IndexRoute component={FormsSearchableList} />
 
@@ -315,10 +315,10 @@ export var routes =()=> (
     </Route>
 }
 
-{customSessionInstance.hasAccess("users") &&
+{customSessionInstance.hasAccess("users_view") &&
     <Route path='users' component={()=>(<UserBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
 }
-{customSessionInstance.hasAccess("organizations") &&
+{customSessionInstance.hasAccess("organizations_view") &&
     <Route path='organizations' component={()=>(<OrganizationBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
 }
     <Route path='*' component={SectionNotFound} />
