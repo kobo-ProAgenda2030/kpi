@@ -22,6 +22,9 @@ import {
 } from 'js/constants';
 import {searches} from '../searches';
 import {ListSearch} from '../components/list';
+import HeaderTitleEditor from 'js/components/header/headerTitleEditor';
+import SearchBox from 'js/components/header/searchBox';
+import myLibraryStore from 'js/components/library/myLibraryStore';
 import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession';
 
 
