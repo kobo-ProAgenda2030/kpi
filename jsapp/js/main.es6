@@ -10,6 +10,9 @@ import React from 'react';
 import {Cookies} from 'react-cookie';
 import {render} from 'react-dom';
 
+import {SUPPORT_API_BASE_URL} from './support-api-constants';
+import {Services} from 'kpi-custom-modules/lib/service/services'
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
 require('../scss/main.scss');
 
 var el = (function(){
@@ -39,23 +42,32 @@ $.ajaxSetup({
     }
 });
 
-if (document.head.querySelector('meta[name=kpi-root-path]')) {
-
-  render(<RunRoutes routes={routes} />, el);
-
-  if (module.hot) {
-    module.hot.accept('./app', () => {
-      let RunRoutes = require('./app').default;
-      render(<AppContainer><RunRoutes routes={routes} /></AppContainer>, el);
+const services=new Services()
+services.load(SUPPORT_API_BASE_URL)
+customSessionInstance.load(services)
+.then(()=>{
+    if (document.head.querySelector('meta[name=kpi-root-path]')) {
+    
+      render(<RunRoutes routes={routes()} />, el);
+    
+      if (module.hot) {
+        module.hot.accept('./app', () => {
+          let RunRoutes = require('./app').default;
+          render(<AppContainer><RunRoutes routes={routes()} /></AppContainer>, el);
+        });
+      }
+    } else {
+      console.error('no kpi-root-path meta tag set. skipping react-router init');
+    }
+    
+    document.addEventListener('DOMContentLoaded', (evt) => {
+      const registrationPasswordAppEl = document.getElementById('registration-password-app');
+      if (registrationPasswordAppEl) {
+        render(<AppContainer><RegistrationPasswordApp /></AppContainer>, registrationPasswordAppEl);
+      }
     });
-  }
-} else {
-  console.error('no kpi-root-path meta tag set. skipping react-router init');
-}
-
-document.addEventListener('DOMContentLoaded', (evt) => {
-  const registrationPasswordAppEl = document.getElementById('registration-password-app');
-  if (registrationPasswordAppEl) {
-    render(<AppContainer><RegistrationPasswordApp /></AppContainer>, registrationPasswordAppEl);
-  }
-});
+    
+})
+.catch((error)=>{
+  alert(`${error}`)
+})

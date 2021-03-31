@@ -52,6 +52,10 @@ import {
 import FormsSearchableList from './lists/forms';
 import permConfig from 'js/components/permissions/permConfig';
 import {ROUTES} from 'js/constants';
+import {OrganizationBody} from 'kpi-custom-modules/lib/modules/organizations/OrganizationScreen';
+import {UserBody} from 'kpi-custom-modules/lib/modules/users/UserScreen';
+import {SUPPORT_API_BASE_URL} from './support-api-constants';
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
 
 class App extends React.Component {
   constructor(props) {
@@ -117,6 +121,7 @@ class App extends React.Component {
       pageWrapperModifiers[`is-modal-${this.state.pageState.modal.type}`] = true;
     }
 
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
     return (
       <DocumentTitle title='KoBoToolbox'>
         <React.Fragment>
@@ -133,10 +138,9 @@ class App extends React.Component {
                 <MainHeader assetid={assetid}/>
                 <Drawer/>
               </React.Fragment>
-            }
-
-            <bem.PageWrapper__content className='mdl-layout__content' m={pageWrapperContentModifiers}>
-              { !this.isFormBuilder() &&
+              }
+              <bem.PageWrapper__content className='mdl-layout__content' m={this.isFormSingle() ? pageWrapperContentModifiers : []}  style={{ marginLeft: showExtraMenu ? 270 : 58 }}>
+                { !this.isFormBuilder() &&
                 <React.Fragment>
                   <FormViewTabs type={'top'} show={this.isFormSingle()} />
                   <FormViewTabs type={'side'} show={this.isFormSingle()} />
@@ -253,74 +257,82 @@ class SectionNotFound extends React.Component {
   }
 }
 
-export var routes = (
+export var routes =()=> (
   <Route name='home' path='/' component={App}>
     <Route path={ROUTES.ACCOUNT_SETTINGS} component={AccountSettings} />
     <Route path={ROUTES.CHANGE_PASSWORD} component={ChangePassword} />
-
-    <Route path={ROUTES.LIBRARY}>
-      <Route path={ROUTES.MY_LIBRARY} component={MyLibraryRoute}/>
-      <Route path={ROUTES.PUBLIC_COLLECTIONS} component={PublicCollectionsRoute}/>
-      <Route path={ROUTES.NEW_LIBRARY_ITEM} component={LibraryAssetEditor}/>
-      <Route path={ROUTES.LIBRARY_ITEM} component={AssetRoute}/>
-      <Route path={ROUTES.EDIT_LIBRARY_ITEM} component={LibraryAssetEditor}/>
-      <Route path={ROUTES.NEW_LIBRARY_CHILD} component={LibraryAssetEditor}/>
-      <Route path={ROUTES.LIBRARY_ITEM_JSON} component={FormJson}/>
-      <Route path={ROUTES.LIBRARY_ITEM_XFORM} component={FormXform}/>
-      <IndexRedirect to={ROUTES.MY_LIBRARY}/>
-    </Route>
-
-    <IndexRedirect to={ROUTES.FORMS} />
-    <Route path={ROUTES.FORMS} >
-      <IndexRoute component={FormsSearchableList} />
-
-      <Route path={ROUTES.FORM}>
-        <Route path={ROUTES.FORM_JSON} component={FormJson} />
-        <Route path={ROUTES.FORM_XFORM} component={FormXform} />
-        <Route path={ROUTES.FORM_EDIT} component={FormPage} />
-
-        <Route path={ROUTES.FORM_SUMMARY}>
-          <IndexRoute component={FormSummary} />
-        </Route>
-
-        <Route path={ROUTES.FORM_LANDING}>
-          <IndexRoute component={FormLanding} />
-        </Route>
-
-        <Route path={ROUTES.FORM_DATA}>
-          <Route path={ROUTES.FORM_REPORT} component={Reports} />
-          <Route path={ROUTES.FORM_REPORT_OLD} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_TABLE} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_DOWNLOADS} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_GALLERY} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_MAP} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_MAP_BY} component={FormSubScreens} />
-          <IndexRedirect to={ROUTES.FORM_REPORT} />
-        </Route>
-
-        <Route path={ROUTES.FORM_SETTINGS}>
-          <IndexRoute component={FormSubScreens} />
-          <Route path={ROUTES.FORM_MEDIA} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_SHARING} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_REST} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_REST_HOOK} component={FormSubScreens} />
-          <Route path={ROUTES.FORM_KOBOCAT} component={FormSubScreens} />
-        </Route>
-
-        {/**
-          * TODO change this HACKFIX to a better solution
-          *
-          * Used to force refresh form sub routes. It's some kine of a weird
-          * way of introducing a loading screen during sub route refresh.
-          **/}
-        <Route path={ROUTES.FORM_RESET} component={FormSubScreens} />
-
-        <IndexRedirect to={ROUTES.FORM_LANDING} />
+    {customSessionInstance.hasAccess("library_view") &&
+      <Route path={ROUTES.LIBRARY}>
+        <Route path={ROUTES.MY_LIBRARY} component={MyLibraryRoute}/>
+        <Route path={ROUTES.PUBLIC_COLLECTIONS} component={PublicCollectionsRoute}/>
+        <Route path={ROUTES.NEW_LIBRARY_ITEM} component={LibraryAssetEditor}/>
+        <Route path={ROUTES.LIBRARY_ITEM} component={AssetRoute}/>
+        <Route path={ROUTES.EDIT_LIBRARY_ITEM} component={LibraryAssetEditor}/>
+        <Route path={ROUTES.NEW_LIBRARY_CHILD} component={LibraryAssetEditor}/>
+        <Route path={ROUTES.LIBRARY_ITEM_JSON} component={FormJson}/>
+        <Route path={ROUTES.LIBRARY_ITEM_XFORM} component={FormXform}/>
+        <IndexRedirect to={ROUTES.MY_LIBRARY}/>
       </Route>
+    }
+    <IndexRedirect to={ROUTES.FORMS} />
+    {customSessionInstance.hasAccess("forms_view") &&
+      <Route path={ROUTES.FORMS} >
+        <IndexRoute component={FormsSearchableList} />
 
-      <Route path='*' component={FormNotFound} />
-    </Route>
+        <Route path={ROUTES.FORM}>
+          <Route path={ROUTES.FORM_JSON} component={FormJson} />
+          <Route path={ROUTES.FORM_XFORM} component={FormXform} />
+          <Route path={ROUTES.FORM_EDIT} component={FormPage} />
 
+          <Route path={ROUTES.FORM_SUMMARY}>
+            <IndexRoute component={FormSummary} />
+          </Route>
+
+          <Route path={ROUTES.FORM_LANDING}>
+            <IndexRoute component={FormLanding} />
+          </Route>
+
+          <Route path={ROUTES.FORM_DATA}>
+            <Route path={ROUTES.FORM_REPORT} component={Reports} />
+            <Route path={ROUTES.FORM_REPORT_OLD} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_TABLE} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_DOWNLOADS} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_GALLERY} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_MAP} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_MAP_BY} component={FormSubScreens} />
+            <IndexRedirect to={ROUTES.FORM_REPORT} />
+          </Route>
+
+          <Route path={ROUTES.FORM_SETTINGS}>
+            <IndexRoute component={FormSubScreens} />
+            <Route path={ROUTES.FORM_MEDIA} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_SHARING} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_REST} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_REST_HOOK} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_KOBOCAT} component={FormSubScreens} />
+          </Route>
+
+          {/**
+            * TODO change this HACKFIX to a better solution
+            *
+            * Used to force refresh form sub routes. It's some kine of a weird
+            * way of introducing a loading screen during sub route refresh.
+            **/}
+          <Route path={ROUTES.FORM_RESET} component={FormSubScreens} />
+
+          <IndexRedirect to={ROUTES.FORM_LANDING} />
+        </Route>
+
+        <Route path='*' component={FormNotFound} />
+      </Route>
+    }
+
+{customSessionInstance.hasAccess("users_view") &&
+    <Route path='users' component={()=>(<UserBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
+}
+{customSessionInstance.hasAccess("organizations_view") &&
+    <Route path='organizations' component={()=>(<OrganizationBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
+}
     <Route path='*' component={SectionNotFound} />
   </Route>
 );

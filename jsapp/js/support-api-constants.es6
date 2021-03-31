@@ -1,0 +1,1 @@
+export const SUPPORT_API_BASE_URL = 'https://support.nexion-dev.tk';

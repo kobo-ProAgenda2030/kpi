@@ -22,9 +22,8 @@ import {
 } from 'js/constants';
 import {searches} from '../searches';
 import {ListSearch} from '../components/list';
-import HeaderTitleEditor from 'js/components/header/headerTitleEditor';
-import SearchBox from 'js/components/header/searchBox';
-import myLibraryStore from 'js/components/library/myLibraryStore';
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession';
+
 
 class MainHeader extends Reflux.Component {
   constructor(props){
@@ -241,6 +240,7 @@ class MainHeader extends Reflux.Component {
       librarySearchBoxPlaceholder = t('Search Public Collections');
     }
 
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))
     return (
         <bem.MainHeader className='mdl-layout__header'>
           <div className='mdl-layout__header-row'>
@@ -252,12 +252,12 @@ class MainHeader extends Reflux.Component {
                 <bem.Header__logo />
               </a>
             </span>
-            { this.isFormList() &&
+            { (this.isFormList() && showExtraMenu) &&
               <div className='mdl-layout__header-searchers'>
                 <ListSearch searchContext={this.state.formFiltersContext} placeholderText={t('Search Projects')} />
               </div>
             }
-            { (this.isMyLibrary() || this.isPublicCollections()) &&
+            { ((this.isMyLibrary() || this.isPublicCollections()) && showExtraMenu) &&
               <div className='mdl-layout__header-searchers'>
                 <SearchBox
                   placeholder={librarySearchBoxPlaceholder}

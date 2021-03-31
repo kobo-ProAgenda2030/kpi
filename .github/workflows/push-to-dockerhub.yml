@@ -1,0 +1,22 @@
+name: Docker Builds, tags and pushes an image to DockerHub
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'pa.*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  docker-build-push:
+    name: Build KPI and push to DockerHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER  }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD  }}
+          repository: proagenda2030/kpi
+          tag_with_ref: true

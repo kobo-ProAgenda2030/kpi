@@ -21,6 +21,8 @@ import {
 import {assign} from 'utils';
 import SidebarFormsList from '../lists/sidebarForms';
 
+import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
+
 class FormSidebar extends Reflux.Component {
   constructor(props){
     super(props);
@@ -130,20 +132,25 @@ class Drawer extends Reflux.Component {
     ];
   }
   render () {
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
     return (
-      <bem.KDrawer>
+      <bem.KDrawer style={{ width: showExtraMenu ? 270 : 58 }}>
         <bem.KDrawer__primaryIcons>
-          <DrawerLink label={t('Projects')} linkto={ROUTES.FORMS} ki-icon='projects' />
-          <DrawerLink label={t('Library')} linkto={ROUTES.LIBRARY} ki-icon='library' />
+          {customSessionInstance.hasAccess("forms_view") && <DrawerLink label={t('Projects')} linkto={ROUTES.FORMS} ki-icon='projects' />}
+          {customSessionInstance.hasAccess("library_view") && <DrawerLink label={t('Library')} linkto={ROUTES.LIBRARY} ki-icon='library' />}
+          {customSessionInstance.hasAccess("users_view") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
+          {customSessionInstance.hasAccess("organizations_view") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
         </bem.KDrawer__primaryIcons>
-
+        {showExtraMenu&&
         <bem.KDrawer__sidebar>
-          { this.isLibrary()
+          { this.isLibrary() && customSessionInstance.hasAccess("library_view")
             ? <LibrarySidebar />
-            : <FormSidebar />
+              : this.isForms() && customSessionInstance.hasAccess("forms_view")?
+                <FormSidebar />
+                : <div/>
           }
         </bem.KDrawer__sidebar>
-
+        }
         <bem.KDrawer__secondaryIcons>
           { stores.session.currentAccount &&
             <IntercomHelpBubble/>
