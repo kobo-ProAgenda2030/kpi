@@ -33,11 +33,13 @@ class AssetsListApiTests(BaseAssetTestCase):
         self.client.login(username='someuser', password='someuser')
         self.list_url = reverse(self._get_endpoint('asset-list'))
 
+    def login_as_other_user(self, username, password):
+        self.client.logout()
+        self.client.login(username=username, password=password)
+
     def test_login_as_other_users(self):
-        self.client.logout()
-        self.client.login(username='admin', password='pass')
-        self.client.logout()
-        self.client.login(username='anotheruser', password='anotheruser')
+        self.login_as_other_user(username='admin', password='pass')
+        self.login_as_other_user(username='anotheruser', password='anotheruser')
         self.client.logout()
 
     def test_create_asset(self):
@@ -62,8 +64,13 @@ class AssetsListApiTests(BaseAssetTestCase):
                          msg=list_response.data)
         expected_list_data = {
             field: detail_response.data[field]
-            for field in AssetListSerializer.Meta.fields
+            for field in AssetListSerializer.Meta.fields if field != 'children'
         }
+        # list endpoint only exposes children count.
+        expected_list_data['children'] = {
+            'count': detail_response.data['children']['count']
+        }
+
         list_result_detail = None
         for result in list_response.data['results']:
             if result['uid'] == expected_list_data['uid']:
@@ -112,7 +119,7 @@ class AssetsListApiTests(BaseAssetTestCase):
                     {
                         'name': 'zeppelin',
                         'type': 'select_one',
-                        'label': 'put on some zeppelin 🧀',
+                        'label': 'put on some zeppelin 🧀🧀🧀',
                         'select_from_list_name': 'choicelist',
                     }
                 ],
@@ -162,11 +169,85 @@ class AssetsListApiTests(BaseAssetTestCase):
         )
         self.assertListEqual(results, [template.uid, question.uid])
 
-        results = uids_from_search_results('🧀')
+        results = uids_from_search_results('🧀🧀🧀')
         self.assertListEqual(results, [template.uid])
 
         results = uids_from_search_results('pk:alrighty')
         self.assertListEqual(results, [])
+
+    def test_assets_ordering(self):
+
+        someuser = User.objects.get(username='someuser')
+        question = Asset.objects.create(
+            owner=someuser,
+            name='A question',
+            asset_type='question',
+        )
+        collection = Asset.objects.create(
+            owner=someuser,
+            name='Ze French collection',
+            asset_type='collection',
+        )
+        template = Asset.objects.create(
+            owner=someuser,
+            name='My template',
+            asset_type='template',
+            content={},
+        )
+        survey = Asset.objects.create(
+            owner=someuser,
+            name='survey',
+            asset_type='survey',
+        )
+        another_collection = Asset.objects.create(
+            owner=someuser,
+            name='Someuser’s collection',
+            asset_type='collection',
+        )
+
+        def uids_from_results(params: dict = None):
+            return [
+                r['uid']
+                for r in self.client.get(self.list_url, data=params).data[
+                    'results'
+                ]
+            ]
+
+        # Default is by date_modified desc
+        expected_default_order = [
+            another_collection.uid,
+            survey.uid,
+            template.uid,
+            collection.uid,
+            question.uid,
+        ]
+        uids = uids_from_results()
+        assert expected_default_order == uids
+
+        # Sorted by name asc
+        expected_order_by_name = [
+            question.uid,
+            template.uid,
+            another_collection.uid,
+            survey.uid,
+            collection.uid,
+        ]
+        uids = uids_from_results({'ordering': 'name'})
+        assert expected_order_by_name == uids
+
+        # Sorted by name asc but collections first
+        expected_order_by_name_collections_first = [
+            another_collection.uid,
+            collection.uid,
+            question.uid,
+            template.uid,
+            survey.uid,
+        ]
+        uids = uids_from_results({
+            'collections_first': 'true',
+            'ordering': 'name',
+        })
+        assert expected_order_by_name_collections_first == uids
 
 
 class AssetVersionApiTests(BaseTestCase):
@@ -358,6 +439,76 @@ class AssetsDetailApiTests(BaseAssetTestCase):
             test_data=test_data
         )
 
+    def test_report_submissions(self):
+        # Prepare the mock data
+        report_url = reverse(
+            self._get_endpoint('asset-reports'), kwargs={'uid': self.asset_uid}
+        )
+        anotheruser = User.objects.get(username='anotheruser')
+        self.asset.content = {
+            'survey': [
+                {
+                    'type': 'select_one',
+                    'label': 'q1',
+                    'select_from_list_name': 'iu0sl99'
+                },
+            ],
+            'choices': [
+                {'name': 'a1', 'label': ['a1'], 'list_name': 'iu0sl99'},
+                {'name': 'a3', 'label': ['a3'], 'list_name': 'iu0sl99'},
+            ]
+        }
+        self.asset.save()
+        self.asset.deploy(backend='mock', active=True)
+        submissions = [
+            {
+                '__version__': self.asset.latest_deployed_version.uid,
+                'q1': 'a1',
+                '_submitted_by': 'anotheruser',
+            },
+            {
+                '__version__': self.asset.latest_deployed_version.uid,
+                'q1': 'a3',
+                '_submitted_by': '',
+            },
+        ]
+
+        self.asset.deployment.mock_submissions(submissions)
+        partial_perms = {
+            PERM_VIEW_SUBMISSIONS: [{'_submitted_by': anotheruser.username}]
+        }
+        # Verify endpoint works with the asset owner
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Verify the endpoint returns data
+        self.assertEqual(response.data['count'], 1)
+        # Verify the endpoint request fails when the user is logged out
+        self.client.logout()
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # Verify a user with no permissions for the asset or submission
+        # cannot access the report
+        self.client.login(username='anotheruser', password='anotheruser')
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # Test that a user with partial permissions is able to access data
+        self.asset.assign_perm(anotheruser, PERM_PARTIAL_SUBMISSIONS,
+                               partial_perms=partial_perms)
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Test that a user with the permissions to view submissions can 
+        # access the data
+        self.asset.remove_perm(anotheruser, PERM_PARTIAL_SUBMISSIONS)
+        self.asset.assign_perm(anotheruser, PERM_VIEW_SUBMISSIONS)
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Verify an admin user has access to the data
+        self.client.logout()
+        self.client.login(username='admin', password='pass')
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_map_styles_field(self):
         self.check_asset_writable_json_field('map_styles')
 
@@ -416,10 +567,14 @@ class AssetsDetailApiTests(BaseAssetTestCase):
         expected_response = [
             {'label': 'Add submissions',
              'url': 'http://testserver/api/v2/permissions/add_submissions/'},
-            {'label': 'Edit and delete submissions',
-             'url': 'http://testserver/api/v2/permissions/change_submissions/'},
+            {'label': 'Delete submissions',
+             'url': 'http://testserver/api/v2/permissions/delete_submissions/'},
             {'label': 'Edit form',
              'url': 'http://testserver/api/v2/permissions/change_asset/'},
+            {'label': 'Edit submissions',
+             'url': 'http://testserver/api/v2/permissions/change_submissions/'},
+            {'label': 'Manage project',
+             'url': 'http://testserver/api/v2/permissions/manage_asset/'},
             {'label': 'Validate submissions',
              'url': 'http://testserver/api/v2/permissions/validate_submissions/'},
             {'label': 'View form',
@@ -434,6 +589,7 @@ class AssetsDetailApiTests(BaseAssetTestCase):
             response.data['assignable_permissions'],
             key=lambda assignable_perm_: assignable_perm_['label']
         )
+
         for index, assignable_perm in enumerate(assignable_permissions):
             self.assertEqual(assignable_perm['url'],
                              expected_response[index]['url'])
@@ -448,6 +604,8 @@ class AssetsDetailApiTests(BaseAssetTestCase):
         expected_response = [
             {'label': 'Edit question',
              'url': 'http://testserver/api/v2/permissions/change_asset/'},
+            {'label': 'Manage question',
+             'url': 'http://testserver/api/v2/permissions/manage_asset/'},
             {'label': 'View question',
              'url': 'http://testserver/api/v2/permissions/view_asset/'},
         ]
@@ -520,13 +678,13 @@ class AssetFileTest(BaseTestCase):
         self.asset.save()
         self.assertListEqual(
             sorted(list(self.asset.get_perms(self.asset.owner))),
-            sorted(list(Asset.get_assignable_permissions(False) +
-                        Asset.CALCULATED_PERMISSIONS))
+            sorted(
+                list(
+                    self.asset.get_assignable_permissions(with_partial=False)
+                    + Asset.CALCULATED_PERMISSIONS
+                )
+            ),
         )
-
-    @staticmethod
-    def absolute_reverse(*args, **kwargs):
-        return 'http://testserver/' + reverse(*args, **kwargs).lstrip('/')
 
     def get_asset_file_content(self, url):
         response = self.client.get(url)

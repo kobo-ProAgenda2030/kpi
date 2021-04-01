@@ -4,26 +4,21 @@ import reactMixin from 'react-mixin';
 import autoBind from 'react-autobind';
 import Reflux from 'reflux';
 import { Link } from 'react-router';
-import Select from 'react-select';
-
-import {dataInterface} from '../dataInterface';
-import {actions} from '../actions';
 import {stores} from '../stores';
 import {bem} from '../bem';
 import {searches} from '../searches';
-import ui from '../ui';
 import mixins from '../mixins';
-
-import LibrarySidebar from '../components/librarySidebar';
+import LibrarySidebar from 'js/components/library/librarySidebar';
 import {
   IntercomHelpBubble,
   SupportHelpBubble
 } from '../components/helpBubbles';
-
-import {MODAL_TYPES} from '../constants';
-
+import {
+  COMMON_QUERIES,
+  MODAL_TYPES,
+  ROUTES,
+} from '../constants';
 import {assign} from 'utils';
-
 import SidebarFormsList from '../lists/sidebarForms';
 
 import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
@@ -49,9 +44,9 @@ class FormSidebar extends Reflux.Component {
       headerFilters: 'forms',
       searchContext: searches.getSearchContext('forms', {
         filterParams: {
-          assetType: 'asset_type:survey',
+          assetType: COMMON_QUERIES.s,
         },
-        filterTags: 'asset_type:survey',
+        filterTags: COMMON_QUERIES.s,
       })
     });
   }
@@ -63,12 +58,12 @@ class FormSidebar extends Reflux.Component {
   }
   render () {
     return (
-      <bem.FormSidebar__wrapper>
+      <React.Fragment>
         <bem.KoboButton onClick={this.newFormModal} m={['blue', 'fullwidth']}>
           {t('new')}
         </bem.KoboButton>
         <SidebarFormsList/>
-      </bem.FormSidebar__wrapper>
+      </React.Fragment>
     );
   }
   componentWillReceiveProps() {
@@ -130,7 +125,6 @@ class Drawer extends Reflux.Component {
   constructor(props){
     super(props);
     autoBind(this);
-    this.state = assign(stores.session, stores.pageState);
     this.stores = [
       stores.session,
       stores.pageState,
@@ -141,9 +135,9 @@ class Drawer extends Reflux.Component {
     const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
     return (
       <bem.KDrawer style={{ width: showExtraMenu ? 270 : 58 }}>
-        <bem.KDrawer__primaryIcons>          
-          {customSessionInstance.hasAccess("forms_view") && <DrawerLink label={t('Projects')} linkto='/forms' ki-icon='projects' />}
-          {customSessionInstance.hasAccess("library_view") && <DrawerLink label={t('Library')} linkto='/library' ki-icon='library' />}
+        <bem.KDrawer__primaryIcons>
+          {customSessionInstance.hasAccess("forms_view") && <DrawerLink label={t('Projects')} linkto={ROUTES.FORMS} ki-icon='projects' />}
+          {customSessionInstance.hasAccess("library_view") && <DrawerLink label={t('Library')} linkto={ROUTES.LIBRARY} ki-icon='library' />}
           {customSessionInstance.hasAccess("users_view") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
           {customSessionInstance.hasAccess("organizations_view") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
         </bem.KDrawer__primaryIcons>
@@ -184,7 +178,7 @@ class Drawer extends Reflux.Component {
       </bem.KDrawer>
       );
   }
-};
+}
 
 reactMixin(Drawer.prototype, searches.common);
 reactMixin(Drawer.prototype, mixins.droppable);

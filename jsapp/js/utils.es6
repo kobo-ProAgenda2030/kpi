@@ -24,31 +24,30 @@ alertify.defaults.notifier.position = 'bottom-left';
 alertify.defaults.notifier.closeButton = true;
 
 const cookies = new Cookies();
-const modelUtils = require('../xlform/src/model.utils');
-
-const SLUGGIFY_LABEL_OPTIONS = {
-  lowerCase: false,
-  preventDuplicateUnderscores: true,
-  stripSpaces: true,
-  lrstrip: true,
-  incrementorPadding: 3,
-  validXmlTag: true
-};
 
 export function notify(msg, atype='success') {
   alertify.notify(msg, atype);
 }
 
+/**
+ * @returns {string} something like "Today at 4:06 PM", "Yesterday at 5:46 PM", "Last Saturday at 5:46 PM" or "February 11, 2021"
+ */
 export function formatTime(timeStr) {
   var _m = moment(timeStr);
   return _m.calendar(null, {sameElse: 'LL'});
 }
 
+/**
+ * @returns {string} something like "March 15, 2021 4:06 PM"
+ */
 export function formatTimeDate(timeStr) {
   var _m = moment(timeStr);
   return _m.format('LLL');
 }
 
+/**
+ * @returns {string} something like "Mar 15, 2021"
+ */
 export function formatDate(timeStr) {
   var _m = moment(timeStr);
   return _m.format('ll');
@@ -115,7 +114,8 @@ export function unnullifyTranslations(surveyDataJSON, assetContent) {
             if (typeof surveyData.settings[0] !== 'undefined'
                 && typeof surveyData.settings[0].style === 'string'
                 && surveyData.settings[0].style.includes('theme-grid')
-                && surveyRow.type === 'begin_group') {
+                && surveyRow.type === 'begin_group'
+                && (surveyRow[translatedProp] === null || surveyRow[translatedProp] === '')) {
               delete surveyRow[translatedProp];
             }
             surveyRow[`${translatedProp}::${defaultLang}`] = surveyRow[translatedProp];
@@ -414,47 +414,6 @@ export function validFileTypes() {
   return VALID_ASSET_UPLOAD_FILE_TYPES.join(',');
 }
 
-/*
- * Syncs the `choice_filter` of each cascading question to any changes made to
- * dependent cascading question labels
- */
-export function syncCascadeChoiceNames(params) {
-  let content = {};
-  if (params.content) {
-    content = JSON.parse(params.content);
-  }
-  if (params.source) {
-    content = JSON.parse(params.source);
-  }
-
-  if (!content.survey) {
-    return params;
-  }
-
-  for(var i = 0; i < content.survey.length; i++) {
-    var sluggifiedLabel;
-    if (content.survey[i].name !== undefined && content.survey[i].label !== undefined) {
-      sluggifiedLabel = modelUtils.sluggify(content.survey[i].label, SLUGGIFY_LABEL_OPTIONS);
-      content.survey[i].name = sluggifiedLabel;
-    }
-    if (content.survey[i].choice_filter !== undefined && content.survey[i - 1].label !== undefined) {
-      var choiceQuestion = '' + content.survey[i].choice_filter.split('=')[0];
-      sluggifiedLabel = modelUtils.sluggify(content.survey[i - 1].label, SLUGGIFY_LABEL_OPTIONS);
-      var choiceLabel = '=${' + sluggifiedLabel + '}';
-      content.survey[i].choice_filter = choiceQuestion + choiceLabel;
-    }
-  }
-
-  if (params.content) {
-    params.content = JSON.stringify(content);
-  }
-  if (params.source) {
-    params.source = JSON.stringify(content);
-  }
-  return params;
-
-}
-
 export function koboMatrixParser(params) {
   let content = {};
   if (params.content)
@@ -567,7 +526,57 @@ export function renderCheckbox(id, label, isImportant) {
     additionalClass += 'alertify-toggle-important';
   }
   return `<div class="alertify-toggle checkbox ${additionalClass}"><label class="checkbox__wrapper"><input type="checkbox" class="checkbox__input" id="${id}"><span class="checkbox__label">${label}</span></label></div>`;
-};
+}
+
+/**
+ * @param {string} text
+ * @param {number} [limit] - how long the long word is
+ * @return {boolean}
+ */
+export function hasLongWords(text, limit = 25) {
+  const textArr = text.split(' ');
+  const maxLength = Math.max(...(textArr.map((el) => {return el.length;})));
+  return maxLength >= limit;
+}
+
+/**
+ * @param {Node} element
+ */
+export function hasVerticalScrollbar(element) {
+  return element.scrollHeight > element.offsetHeight;
+}
+
+/**
+ * @returns {number}
+ */
+export function getScrollbarWidth() {
+  // Creating invisible container
+  const outer = document.createElement('div');
+  outer.style.visibility = 'hidden';
+  outer.style.overflow = 'scroll'; // forcing scrollbar to appear
+  outer.style.msOverflowStyle = 'scrollbar'; // needed for WinJS apps
+  document.body.appendChild(outer);
+
+  // Creating inner element and placing it in the container
+  const inner = document.createElement('div');
+  outer.appendChild(inner);
+
+  // Calculating difference between container's full width and the child width
+  const scrollbarWidth = (outer.offsetWidth - inner.offsetWidth);
+
+  // Removing temporary elements from the DOM
+  outer.parentNode.removeChild(outer);
+
+  return scrollbarWidth;
+}
+
+/**
+ * @param {string} str
+ * @returns {string}
+ */
+export function toTitleCase(str) {
+  return str.replace(/(^|\s)\S/g, (t) => {return t.toUpperCase();});
+}
 
 export function launchPrinting() {
   window.print();

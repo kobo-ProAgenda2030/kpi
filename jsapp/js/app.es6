@@ -5,7 +5,6 @@
  */
 
 require('jquery-ui/ui/widgets/sortable');
-
 import React from 'react';
 import PropTypes from 'prop-types';
 import DocumentTitle from 'react-document-title';
@@ -17,7 +16,7 @@ import {
   IndexRedirect,
   Route,
   hashHistory,
-  Router
+  Router,
 } from 'react-router';
 import moment from 'moment';
 import {actions} from './actions';
@@ -29,10 +28,12 @@ import mixins from './mixins';
 import MainHeader from './components/header';
 import Drawer from './components/drawer';
 import {
-  AddToLibrary,
   FormPage,
-  LibraryPage
+  LibraryAssetEditor,
 } from './components/formEditors';
+import MyLibraryRoute from 'js/components/library/myLibraryRoute';
+import PublicCollectionsRoute from 'js/components/library/publicCollectionsRoute';
+import AssetRoute from 'js/components/library/assetRoute';
 import Reports from './components/reports';
 import FormLanding from './components/formLanding';
 import FormSummary from './components/formSummary';
@@ -45,10 +46,12 @@ import AccountSettings from './components/accountSettings';
 import ChangePassword from './components/changePassword';
 import {
   assign,
-  currentLang
+  notify,
+  currentLang,
 } from 'utils';
-import LibrarySearchableList from './lists/library';
 import FormsSearchableList from './lists/forms';
+import permConfig from 'js/components/permissions/permConfig';
+import {ROUTES} from 'js/constants';
 import {OrganizationBody} from 'kpi-custom-modules/lib/modules/organizations/OrganizationScreen';
 import {UserBody} from 'kpi-custom-modules/lib/modules/users/UserScreen';
 import {SUPPORT_API_BASE_URL} from './support-api-constants';
@@ -60,29 +63,33 @@ class App extends React.Component {
     moment.locale(currentLang());
     this.state = assign({
       isConfigReady: false,
-      pageState: stores.pageState.state
+      pageState: stores.pageState.state,
     });
   }
   componentWillReceiveProps() {
     // slide out drawer overlay on every page change (better mobile experience)
-    if (this.state.pageState.showFixedDrawer)
+    if (this.state.pageState.showFixedDrawer) {
       stores.pageState.setState({showFixedDrawer: false});
+    }
     // hide modal on every page change
-    if (this.state.pageState.modal)
+    if (this.state.pageState.modal) {
       stores.pageState.hideModal();
+    }
   }
-  componentDidMount () {
+  componentDidMount() {
     this.listenTo(actions.permissions.getConfig.completed, this.onGetConfigCompleted);
-
+    this.listenTo(actions.permissions.getConfig.failed, this.onGetConfigFailed);
     actions.misc.getServerEnvironment();
     actions.permissions.getConfig();
   }
-  onGetConfigCompleted() {
+  onGetConfigCompleted(response) {
     this.setState({isConfigReady: true});
+    permConfig.setPermissions(response.results);
+  }
+  onGetConfigFailed() {
+    notify('Failed to get permissions config!', 'error');
   }
   render() {
-    var assetid = this.props.params.assetid || null;
-
     if (!this.state.isConfigReady) {
       return (
         <bem.Loading>
@@ -94,10 +101,20 @@ class App extends React.Component {
       );
     }
 
+    var assetid = this.props.params.assetid || this.props.params.uid || null;
+
+    const pageWrapperContentModifiers = [];
+    if (this.isFormSingle()) {
+      pageWrapperContentModifiers.push('form-landing');
+    }
+    if (this.isLibrarySingle()) {
+      pageWrapperContentModifiers.push('library-landing');
+    }
+
     const pageWrapperModifiers = {
       'fixed-drawer': this.state.pageState.showFixedDrawer,
       'in-formbuilder': this.isFormBuilder(),
-      'is-modal-visible': Boolean(this.state.pageState.modal)
+      'is-modal-visible': Boolean(this.state.pageState.modal),
     };
 
     if (typeof this.state.pageState.modal === 'object') {
@@ -112,59 +129,53 @@ class App extends React.Component {
           <IntercomHandler/>
           <div className='header-stretch-bg'/>
           <bem.PageWrapper m={pageWrapperModifiers} className='mdl-layout mdl-layout--fixed-header'>
-              { this.state.pageState.modal &&
-                <Modal params={this.state.pageState.modal} />
-              }
+            { this.state.pageState.modal &&
+              <Modal params={this.state.pageState.modal} />
+            }
 
-              { !this.isFormBuilder() &&
+            { !this.isFormBuilder() &&
+              <React.Fragment>
                 <MainHeader assetid={assetid}/>
-              }
-              { !this.isFormBuilder() &&
                 <Drawer/>
+              </React.Fragment>
               }
-              <bem.PageWrapper__content className='mdl-layout__content' m={this.isFormSingle() ? 'form-landing' : ''}  style={{ marginLeft: showExtraMenu ? 270 : 58 }}>
+              <bem.PageWrapper__content className='mdl-layout__content' m={this.isFormSingle() ? pageWrapperContentModifiers : []}  style={{ marginLeft: showExtraMenu ? 270 : 58 }}>
                 { !this.isFormBuilder() &&
+                <React.Fragment>
                   <FormViewTabs type={'top'} show={this.isFormSingle()} />
-                }
-                { !this.isFormBuilder() &&
                   <FormViewTabs type={'side'} show={this.isFormSingle()} />
-                }
-                {this.props.children}
-
-              </bem.PageWrapper__content>
+                </React.Fragment>
+              }
+              {this.props.children}
+            </bem.PageWrapper__content>
           </bem.PageWrapper>
         </React.Fragment>
       </DocumentTitle>
     );
   }
-};
+}
 
-App.contextTypes = {
-  router: PropTypes.object
-};
+App.contextTypes = {router: PropTypes.object};
 
 reactMixin(App.prototype, Reflux.connect(stores.pageState, 'pageState'));
 reactMixin(App.prototype, mixins.contextRouter);
 
 class FormJson extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
-    this.state = {
-      assetcontent: false
-    };
+    this.state = {assetcontent: false};
     autoBind(this);
   }
-  componentDidMount () {
+  componentDidMount() {
     this.listenTo(stores.asset, this.assetStoreTriggered);
-    actions.resources.loadAsset({id: this.props.params.assetid});
+    const uid = this.props.params.assetid || this.props.params.uid;
+    actions.resources.loadAsset({id: uid});
 
   }
-  assetStoreTriggered (data, uid) {
-    this.setState({
-      assetcontent: data[uid].content
-    });
+  assetStoreTriggered(data, uid) {
+    this.setState({assetcontent: data[uid].content});
   }
-  render () {
+  render() {
     return (
         <ui.Panel>
           <bem.FormView>
@@ -184,23 +195,20 @@ class FormJson extends React.Component {
 reactMixin(FormJson.prototype, Reflux.ListenerMixin);
 
 class FormXform extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
-    this.state = {
-      xformLoaded: false
-    };
+    this.state = {xformLoaded: false};
   }
-  componentDidMount () {
-    dataInterface.getAssetXformView(this.props.params.assetid).done((content) => {
+  componentDidMount() {
+    const uid = this.props.params.assetid || this.props.params.uid;
+    dataInterface.getAssetXformView(uid).done((content) => {
       this.setState({
         xformLoaded: true,
-        xformHtml: {
-          __html: $('<div>').html(content).find('.pygment').html()
-        },
+        xformHtml: {__html: $('<div>').html(content).find('.pygment').html()},
       });
     });
   }
-  render () {
+  render() {
     if (!this.state.xformLoaded) {
       return (
         <ui.Panel>
@@ -225,7 +233,7 @@ class FormXform extends React.Component {
 }
 
 class FormNotFound extends React.Component {
-  render () {
+  render() {
     return (
         <ui.Panel>
           <bem.Loading>
@@ -239,7 +247,7 @@ class FormNotFound extends React.Component {
 }
 
 class SectionNotFound extends React.Component {
-  render () {
+  render() {
     return (
         <ui.Panel className='k404'>
           <i />
@@ -251,69 +259,73 @@ class SectionNotFound extends React.Component {
 
 export var routes =()=> (
   <Route name='home' path='/' component={App}>
-    <Route path='account-settings' component={AccountSettings} />
-    <Route path='change-password' component={ChangePassword} />
-  {customSessionInstance.hasAccess("library_view") &&
-    <Route path='library' >
-      <Route path='new' component={AddToLibrary} />
-      <Route path='new/template' component={AddToLibrary} />
-      <Route path='/library/:assetid'>
-        {/*<Route name="library-form-download" path="download" handler={FormDownload} />,*/}
-        <Route path='json' component={FormJson} />,
-        <Route path='xform' component={FormXform} />,
-        <Route path='edit' component={LibraryPage} />
+    <Route path={ROUTES.ACCOUNT_SETTINGS} component={AccountSettings} />
+    <Route path={ROUTES.CHANGE_PASSWORD} component={ChangePassword} />
+    {customSessionInstance.hasAccess("library_view") &&
+      <Route path={ROUTES.LIBRARY}>
+        <Route path={ROUTES.MY_LIBRARY} component={MyLibraryRoute}/>
+        <Route path={ROUTES.PUBLIC_COLLECTIONS} component={PublicCollectionsRoute}/>
+        <Route path={ROUTES.NEW_LIBRARY_ITEM} component={LibraryAssetEditor}/>
+        <Route path={ROUTES.LIBRARY_ITEM} component={AssetRoute}/>
+        <Route path={ROUTES.EDIT_LIBRARY_ITEM} component={LibraryAssetEditor}/>
+        <Route path={ROUTES.NEW_LIBRARY_CHILD} component={LibraryAssetEditor}/>
+        <Route path={ROUTES.LIBRARY_ITEM_JSON} component={FormJson}/>
+        <Route path={ROUTES.LIBRARY_ITEM_XFORM} component={FormXform}/>
+        <IndexRedirect to={ROUTES.MY_LIBRARY}/>
       </Route>
-      <IndexRoute component={LibrarySearchableList} />
-    </Route>
-}
-    <IndexRedirect to='forms' />
-{customSessionInstance.hasAccess("forms_view") &&
-    <Route path='forms' >
-      <IndexRoute component={FormsSearchableList} />
+    }
+    <IndexRedirect to={ROUTES.FORMS} />
+    {customSessionInstance.hasAccess("forms_view") &&
+      <Route path={ROUTES.FORMS} >
+        <IndexRoute component={FormsSearchableList} />
 
-      <Route path='/forms/:assetid'>
-        {/*<Route name="form-download" path="download" component={FormDownload} />*/}
-        <Route path='json' component={FormJson} />
-        <Route path='xform' component={FormXform} />
-        <Route path='edit' component={FormPage} />
+        <Route path={ROUTES.FORM}>
+          <Route path={ROUTES.FORM_JSON} component={FormJson} />
+          <Route path={ROUTES.FORM_XFORM} component={FormXform} />
+          <Route path={ROUTES.FORM_EDIT} component={FormPage} />
 
-        <Route path='summary'>
-          <IndexRoute component={FormSummary} />
+          <Route path={ROUTES.FORM_SUMMARY}>
+            <IndexRoute component={FormSummary} />
+          </Route>
+
+          <Route path={ROUTES.FORM_LANDING}>
+            <IndexRoute component={FormLanding} />
+          </Route>
+
+          <Route path={ROUTES.FORM_DATA}>
+            <Route path={ROUTES.FORM_REPORT} component={Reports} />
+            <Route path={ROUTES.FORM_REPORT_OLD} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_TABLE} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_DOWNLOADS} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_GALLERY} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_MAP} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_MAP_BY} component={FormSubScreens} />
+            <IndexRedirect to={ROUTES.FORM_REPORT} />
+          </Route>
+
+          <Route path={ROUTES.FORM_SETTINGS}>
+            <IndexRoute component={FormSubScreens} />
+            <Route path={ROUTES.FORM_MEDIA} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_SHARING} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_REST} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_REST_HOOK} component={FormSubScreens} />
+            <Route path={ROUTES.FORM_KOBOCAT} component={FormSubScreens} />
+          </Route>
+
+          {/**
+            * TODO change this HACKFIX to a better solution
+            *
+            * Used to force refresh form sub routes. It's some kine of a weird
+            * way of introducing a loading screen during sub route refresh.
+            **/}
+          <Route path={ROUTES.FORM_RESET} component={FormSubScreens} />
+
+          <IndexRedirect to={ROUTES.FORM_LANDING} />
         </Route>
 
-        <Route path='landing'>
-          <IndexRoute component={FormLanding} />
-        </Route>
-
-        <Route path='data'>
-          <Route path='report' component={Reports} />
-          <Route path='report-legacy' component={FormSubScreens} />
-          <Route path='table' component={FormSubScreens} />
-          <Route path='downloads' component={FormSubScreens} />
-          <Route path='gallery' component={FormSubScreens} />
-          <Route path='map' component={FormSubScreens} />
-          <Route path='map/:viewby' component={FormSubScreens} />
-          <IndexRedirect to='report' />
-        </Route>
-
-        <Route path='settings'>
-          <IndexRoute component={FormSubScreens} />
-          <Route path='media' component={FormSubScreens} />
-          <Route path='sharing' component={FormSubScreens} />
-          <Route path='rest' component={FormSubScreens} />
-          <Route path='rest/:hookUid' component={FormSubScreens} />
-          <Route path='kobocat' component={FormSubScreens} />
-        </Route>
-
-        {/* used to force refresh form screens */}
-        <Route path='reset' component={FormSubScreens} />
-
-        <IndexRedirect to='landing' />
+        <Route path='*' component={FormNotFound} />
       </Route>
-
-      <Route path='*' component={FormNotFound} />
-    </Route>
-}
+    }
 
 {customSessionInstance.hasAccess("users_view") &&
     <Route path='users' component={()=>(<UserBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
@@ -340,7 +352,7 @@ export default class RunRoutes extends React.Component {
 
   render() {
     return (
-      <Router history={hashHistory} ref={ref=>this.router = ref} routes={this.props.routes} />
+      <Router history={hashHistory} ref={(ref) => {return this.router = ref;}} routes={this.props.routes} />
     );
   }
 }

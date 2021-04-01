@@ -6,9 +6,10 @@ import Reflux from 'reflux';
 import alertify from 'alertifyjs';
 import Select from 'react-select';
 import Dropzone from 'react-dropzone';
-import TextBox from 'js/components/textBox';
-import Checkbox from 'js/components/checkbox';
+import TextBox from 'js/components/common/textBox';
+import Checkbox from 'js/components/common/checkbox';
 import {bem} from 'js/bem';
+import assetUtils from 'js/assetUtils';
 import TextareaAutosize from 'react-autosize-textarea';
 import {stores} from 'js/stores';
 import {hashHistory} from 'react-router';
@@ -24,7 +25,8 @@ import {
 } from 'utils';
 import {
   NAME_MAX_LENGTH,
-  PROJECT_SETTINGS_CONTEXTS
+  PROJECT_SETTINGS_CONTEXTS,
+  ROUTES,
 } from 'js/constants';
 
 const VIA_URL_SUPPORT_URL = 'xls_url.html';
@@ -296,18 +298,20 @@ class ProjectSettings extends React.Component {
       targetUid = this.state.formAsset.uid;
     } else if (this.context.router && this.context.router.params.assetid) {
       targetUid = this.context.router.params.assetid;
+    } else if (this.context.router && this.context.router.params.uid) {
+      targetUid = this.context.router.params.uid;
     }
 
     if (!targetUid) {
       throw new Error('Unknown uid!');
     }
 
-    hashHistory.push(`/forms/${targetUid}/landing`);
+    hashHistory.push(ROUTES.FORM_LANDING.replace(':uid', targetUid));
   }
 
   goToProjectsList() {
     stores.pageState.hideModal();
-    hashHistory.push('/forms/');
+    hashHistory.push(ROUTES.FORMS);
   }
 
   /*
@@ -400,14 +404,7 @@ class ProjectSettings extends React.Component {
         resolve(this.state.formAsset);
       } else {
         dataInterface.createResource({
-          name: 'Untitled',
-          asset_type: 'survey',
-          settings: JSON.stringify({
-            description: '',
-            sector: null,
-            country: null,
-            'share-metadata': false
-          })
+          asset_type: 'empty',
         }).done((asset) => {
           resolve(asset);
         }).fail(function(r){
@@ -496,12 +493,7 @@ class ProjectSettings extends React.Component {
                   // when replacing, we omit PROJECT_DETAILS step
                   this.goToFormLanding();
                 } else {
-                  // TODO: allow serializers to take care of file names to
-                  // remove this bandaid fix for "Untitled" filenames
                   var assetName = finalAsset.name;
-                  if (assetName === 'Untitled') {
-                    assetName = this.getFilenameFromURI(importUrl);
-                  }
                   this.setState({
                     formAsset: finalAsset,
                     name: assetName,
@@ -519,10 +511,6 @@ class ProjectSettings extends React.Component {
               });
             },
             (response) => {
-              // delete temporary asset
-              actions.resources.deleteAsset({uid: asset.uid});
-              this.setState({formAsset: false});
-
               this.resetImportUrlButton();
               const errLines = [];
               errLines.push(t('Import Failed!'));
@@ -563,12 +551,7 @@ class ProjectSettings extends React.Component {
                   // when replacing, we omit PROJECT_DETAILS step
                   this.goToFormLanding();
                 } else {
-                  // TODO: allow serializers to take care of file names to
-                  // remove this bandaid fix for "Untitled" filenames
                   var assetName = finalAsset.name;
-                  if (assetName === 'Untitled') {
-                    assetName = files[0].name.split('.xlsx')[0];
-                  }
                   this.setState({
                     formAsset: finalAsset,
                     name: assetName,
@@ -586,10 +569,6 @@ class ProjectSettings extends React.Component {
               });
             },
             (response) => {
-              // delete temporary asset
-              actions.resources.deleteAsset({uid: asset.uid});
-              this.setState({formAsset: false});
-
               this.setState({isUploadFilePending: false});
               const errLines = [];
               errLines.push(t('Import Failed!'));
@@ -644,7 +623,7 @@ class ProjectSettings extends React.Component {
   renderChooseTemplateButton() {
     return (
       <button onClick={this.displayStep.bind(this, this.STEPS.CHOOSE_TEMPLATE)}>
-        <i className='k-icon-template' />
+        <i className='k-icon-template-new' />
         {t('Use a template')}
       </button>
     );
@@ -786,7 +765,7 @@ class ProjectSettings extends React.Component {
   renderStepProjectDetails() {
     const sectors = stores.session.environment.available_sectors;
     const countries = stores.session.environment.available_countries;
-    const isSelfOwned = this.userIsOwner(this.state.formAsset);
+    const isSelfOwned = assetUtils.isSelfOwned(this.state.formAsset);
 
     return (
       <bem.FormModal__form

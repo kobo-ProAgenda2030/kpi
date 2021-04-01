@@ -2,9 +2,8 @@ import React from 'react';
 import reactMixin from 'react-mixin';
 import autoBind from 'react-autobind';
 import Reflux from 'reflux';
-import TagsInput from 'react-tagsinput';
-import Checkbox from 'js/components/checkbox';
-import TextBox from 'js/components/textBox';
+import Checkbox from 'js/components/common/checkbox';
+import TextBox from 'js/components/common/textBox';
 import {stores} from 'js/stores';
 import {actions} from 'js/actions';
 import {bem} from 'js/bem';
@@ -21,12 +20,17 @@ import {
   PERMISSIONS_CODENAMES
 } from 'js/constants';
 
+const PARTIAL_PLACEHOLDER = t('Enter usernames separated by commas');
+const USERNAMES_SEPARATOR = ',';
+
 /**
  * Form for adding/changing user permissions for surveys.
  *
  * @prop uid - asset uid
  * @prop username - permissions user username (could be empty for new)
  * @prop permissions - list of permissions (could be empty for new)
+ * @prop assignablePerms - list of assignable permissions for given asset type
+ * @prop nonOwnerPerms - list of permissions with exclusion of the asset owner permissions
  * @prop onSubmitEnd - callback to be run when submit ends (success or failure)
  */
 class UserAssetPermsEditor extends React.Component {
@@ -39,11 +43,11 @@ class UserAssetPermsEditor extends React.Component {
       usernamesBeingChecked: new Set(),
       isSubmitPending: false,
       isEditingUsername: false,
-      isAddingPartialUsernames: false,
       // form user inputs
       username: '',
       formView: false,
       formViewDisabled: false,
+      formEditDisabled: false,
       formEdit: false,
       submissionsView: false,
       submissionsViewDisabled: false,
@@ -51,8 +55,11 @@ class UserAssetPermsEditor extends React.Component {
       submissionsViewPartialDisabled: false,
       submissionsViewPartialUsers: [],
       submissionsAdd: false,
+      submissionsAddDisabled: false,
       submissionsEdit: false,
       submissionsEditDisabled: false,
+      submissionsDelete: false,
+      submissionsDeleteDisabled: false,
       submissionsValidate: false,
       submissionsValidateDisabled: false
     };
@@ -132,8 +139,11 @@ class UserAssetPermsEditor extends React.Component {
   applyValidityRules(stateObj) {
     // reset disabling before checks
     stateObj.formViewDisabled = false;
+    stateObj.formEditDisabled = false;
     stateObj.submissionsViewDisabled = false;
     stateObj.submissionsViewPartialDisabled = false;
+    stateObj.submissionsAddDisabled = false;
+    stateObj.submissionsDeleteDisabled = false;
     stateObj.submissionsEditDisabled = false;
     stateObj.submissionsValidateDisabled = false;
 
@@ -152,6 +162,7 @@ class UserAssetPermsEditor extends React.Component {
 
     // checking these options implies having `submissionsView` checked
     if (
+      stateObj.submissionsDelete ||
       stateObj.submissionsEdit ||
       stateObj.submissionsValidate
     ) {
@@ -161,6 +172,8 @@ class UserAssetPermsEditor extends React.Component {
 
     // checking `submissionsViewPartial` disallows checking two other options
     if (stateObj.submissionsViewPartial) {
+      stateObj.submissionsDelete = false;
+      stateObj.submissionsDeleteDisabled = true;
       stateObj.submissionsEdit = false;
       stateObj.submissionsEditDisabled = true;
       stateObj.submissionsValidate = false;
@@ -169,12 +182,33 @@ class UserAssetPermsEditor extends React.Component {
 
     // checking these options disallows checking `submissionsViewPartial`
     if (
+      stateObj.submissionsDelete ||
       stateObj.submissionsEdit ||
       stateObj.submissionsValidate
     ) {
       stateObj.submissionsViewPartial = false;
       stateObj.submissionsViewPartialDisabled = true;
       stateObj.submissionsViewPartialUsers = [];
+    }
+
+    // `formManage` implies every other permission (except partial permissions)
+    if (stateObj.formManage) {
+      stateObj.formView = true;
+      stateObj.formEdit = true;
+      stateObj.submissionsAdd = true;
+      stateObj.submissionsView = true;
+      stateObj.submissionsDelete = true;
+      stateObj.submissionsEdit = true;
+      stateObj.submissionsValidate = true;
+
+      stateObj.formViewDisabled = true;
+      stateObj.formEditDisabled = true;
+      stateObj.submissionsViewDisabled = true;
+      stateObj.submissionsViewPartialDisabled = true;
+      stateObj.submissionsAddDisabled = true;
+      stateObj.submissionsDeleteDisabled = true;
+      stateObj.submissionsEditDisabled = true;
+      stateObj.submissionsValidateDisabled = true;
     }
 
     return stateObj;
@@ -211,46 +245,17 @@ class UserAssetPermsEditor extends React.Component {
   }
 
   /**
-   * Enables Enter key on username input.
+   * Enables Enter key on input.
    */
-  onUsernameKeyPress(key, evt) {
-    if (key === 'Enter') {
+  onInputKeyPress(key, evt) {
+    if (key === KEY_CODES.ENTER) {
       evt.currentTarget.blur();
       evt.preventDefault(); // prevent submitting form
     }
   }
 
-  /**
-   * Handles TagsInput change event and blocks adding nonexistent usernames.
-   * Also unblocks the submit button.
-   */
-  onSubmissionsViewPartialUsersChange(allUsers) {
-    this.setState({isAddingPartialUsernames: false});
-    const submissionsViewPartialUsers = [];
-
-    allUsers.forEach((username) => {
-      const userCheck = this.checkUsernameSync(username);
-      if (userCheck === true) {
-        submissionsViewPartialUsers.push(username);
-      } else if (userCheck === undefined) {
-        // we add unknown usernames for now and will check and possibly remove
-        // with checkUsernameAsync
-        submissionsViewPartialUsers.push(username);
-        this.checkUsernameAsync(username);
-      } else {
-        this.notifyUnknownUser(username);
-      }
-    });
-
-    this.setState({submissionsViewPartialUsers: submissionsViewPartialUsers});
-  }
-
-  onSubmissionsViewPartialUsersInputFocus() {
-    this.setState({isAddingPartialUsernames: true});
-  }
-
-  onSubmissionsViewPartialUsersInputBlur() {
-    this.setState({isAddingPartialUsernames: false});
+  onSubmissionsViewPartialUsersChange(users) {
+    this.setState({submissionsViewPartialUsers: users.trim().split(USERNAMES_SEPARATOR)});
   }
 
   /**
@@ -306,11 +311,19 @@ class UserAssetPermsEditor extends React.Component {
   }
 
   getLabel(permCodename) {
-    return this.props.assignablePerms.get(permConfig.getPermissionByCodename(PERMISSIONS_CODENAMES.get(permCodename)).url);
+    return this.props.assignablePerms.get(
+      permConfig.getPermissionByCodename(
+        PERMISSIONS_CODENAMES[permCodename]
+      ).url
+    );
   }
 
   isAssignable(permCodename) {
-    return this.props.assignablePerms.has(permConfig.getPermissionByCodename(PERMISSIONS_CODENAMES.get(permCodename)).url);
+    return this.props.assignablePerms.has(
+      permConfig.getPermissionByCodename(
+        PERMISSIONS_CODENAMES[permCodename]
+      ).url
+    );
   }
 
   /**
@@ -323,6 +336,7 @@ class UserAssetPermsEditor extends React.Component {
       this.state.submissionsView ||
       this.state.submissionsViewPartial ||
       this.state.submissionsAdd ||
+      this.state.submissionsDelete ||
       this.state.submissionsEdit ||
       this.state.submissionsValidate
     );
@@ -332,7 +346,6 @@ class UserAssetPermsEditor extends React.Component {
       isPartialValid &&
       !this.state.isSubmitPending &&
       !this.state.isEditingUsername &&
-      !this.state.isAddingPartialUsernames &&
       this.state.username.length > 0 &&
       this.state.usernamesBeingChecked.size === 0 &&
       // we don't allow manual setting anonymous user permissions through UI
@@ -347,8 +360,10 @@ class UserAssetPermsEditor extends React.Component {
     const output = {
       username: this.state.username,
     };
+
     if (this.isAssignable('view_asset')) {output.formView = this.state.formView;}
     if (this.isAssignable('change_asset')) {output.formEdit = this.state.formEdit;}
+    if (this.isAssignable('manage_asset')) {output.formManage = this.state.formManage;}
     if (this.isAssignable('add_submissions')) {output.submissionsAdd = this.state.submissionsAdd;}
     if (this.isAssignable('view_submissions')) {output.submissionsView = this.state.submissionsView;}
     if (this.isAssignable('partial_submissions')) {
@@ -356,6 +371,7 @@ class UserAssetPermsEditor extends React.Component {
       output.submissionsViewPartialUsers = this.state.submissionsViewPartialUsers;
     }
     if (this.isAssignable('change_submissions')) {output.submissionsEdit = this.state.submissionsEdit;}
+    if (this.isAssignable('delete_submissions')) {output.submissionsDelete = this.state.submissionsDelete;}
     if (this.isAssignable('validate_submissions')) {output.submissionsValidate = this.state.submissionsValidate;}
     return output;
   }
@@ -368,6 +384,7 @@ class UserAssetPermsEditor extends React.Component {
     }
 
     const formData = this.getFormData();
+
     const parsedUser = permParser.parseFormData(formData);
 
     if (parsedUser.length > 0) {
@@ -391,21 +408,6 @@ class UserAssetPermsEditor extends React.Component {
   render() {
     const isNew = typeof this.props.username === 'undefined';
 
-    const submissionsViewPartialUsersInputProps = {
-      placeholder: t('Enter usernames separated by spaces'),
-      onFocus: this.onSubmissionsViewPartialUsersInputFocus,
-      onBlur: this.onSubmissionsViewPartialUsersInputBlur
-    };
-
-    let submissionsViewPartialUsersClassName = 'react-tagsinput';
-    if (
-      this.state.submissionsViewPartial &&
-      this.state.submissionsViewPartialUsers.length === 0 &&
-      !this.state.isAddingPartialUsernames
-    ) {
-      submissionsViewPartialUsersClassName += ' react-tagsinput-invalid';
-    }
-
     const formModifiers = [];
     if (this.state.isSubmitPending) {
       formModifiers.push('pending');
@@ -425,7 +427,7 @@ class UserAssetPermsEditor extends React.Component {
               value={this.state.username}
               onChange={this.onUsernameChange}
               onBlur={this.onUsernameChangeEnd}
-              onKeyPress={this.onUsernameKeyPress}
+              onKeyPress={this.onInputKeyPress}
               errors={this.state.username.length === 0}
             />
           </div>
@@ -444,6 +446,7 @@ class UserAssetPermsEditor extends React.Component {
           {this.isAssignable('change_asset') &&
             <Checkbox
               checked={this.state.formEdit}
+              disabled={this.state.formEditDisabled}
               onChange={this.onCheckboxChange.bind(this, 'formEdit')}
               label={this.getLabel('change_asset')}
             />
@@ -468,14 +471,12 @@ class UserAssetPermsEditor extends React.Component {
               />
 
               {this.state.submissionsViewPartial === true &&
-                <TagsInput
-                  className={submissionsViewPartialUsersClassName}
-                  value={this.state.submissionsViewPartialUsers}
+                <TextBox
+                  placeholder={PARTIAL_PLACEHOLDER}
+                  value={this.state.submissionsViewPartialUsers.join(USERNAMES_SEPARATOR)}
                   onChange={this.onSubmissionsViewPartialUsersChange}
-                  addOnBlur
-                  addKeys={[KEY_CODES.get('ENTER'), KEY_CODES.get('SPACE'), KEY_CODES.get('TAB')]}
-                  inputProps={submissionsViewPartialUsersInputProps}
-                  onlyUnique
+                  errors={this.state.submissionsViewPartial && this.state.submissionsViewPartialUsers.length === 0}
+                  onKeyPress={this.onInputKeyPress}
                 />
               }
             </div>
@@ -484,6 +485,7 @@ class UserAssetPermsEditor extends React.Component {
           {this.isAssignable('add_submissions') &&
             <Checkbox
               checked={this.state.submissionsAdd}
+              disabled={this.state.submissionsAddDisabled}
               onChange={this.onCheckboxChange.bind(this, 'submissionsAdd')}
               label={this.getLabel('add_submissions')}
             />
@@ -498,12 +500,29 @@ class UserAssetPermsEditor extends React.Component {
             />
           }
 
+          {this.isAssignable('delete_submissions') &&
+            <Checkbox
+              checked={this.state.submissionsDelete}
+              disabled={this.state.submissionsDeleteDisabled}
+              onChange={this.onCheckboxChange.bind(this, 'submissionsDelete')}
+              label={this.getLabel('delete_submissions')}
+            />
+          }
+
           {this.isAssignable('validate_submissions') &&
             <Checkbox
               checked={this.state.submissionsValidate}
               disabled={this.state.submissionsValidateDisabled}
               onChange={this.onCheckboxChange.bind(this, 'submissionsValidate')}
               label={this.getLabel('validate_submissions')}
+            />
+          }
+
+          {this.isAssignable('manage_asset') &&
+            <Checkbox
+              checked={this.state.formManage}
+              onChange={this.onCheckboxChange.bind(this, 'formManage')}
+              label={this.getLabel('manage_asset')}
             />
           }
         </div>
