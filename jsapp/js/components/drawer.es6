@@ -21,7 +21,9 @@ import {
 import {assign} from 'utils';
 import SidebarFormsList from '../lists/sidebarForms';
 
+import {ShinyMenu} from 'kpi-custom-modules/lib/modules/shiny/ShinyMenu';
 import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
+import {SUPPORT_API_BASE_URL} from '../support-api-constants';
 
 class FormSidebar extends Reflux.Component {
   constructor(props){
@@ -132,7 +134,9 @@ class Drawer extends Reflux.Component {
     ];
   }
   render () {
-    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view")||customSessionInstance.hasAccess("shiny_dashboard"))
+    &&
+    (this.isLibrary()||this.isForms()||this.isShiny())
     return (
       <bem.KDrawer style={{ width: showExtraMenu ? 270 : 58 }}>
         <bem.KDrawer__primaryIcons>
@@ -140,6 +144,7 @@ class Drawer extends Reflux.Component {
           {customSessionInstance.hasAccess("library_view") && <DrawerLink label={t('Library')} linkto={ROUTES.LIBRARY} ki-icon='library' />}
           {customSessionInstance.hasAccess("users_view") && <DrawerLink label={t('Users')} linkto='/users' ki-icon='people' />}
           {customSessionInstance.hasAccess("organizations_view") && <DrawerLink label={t('Organizations')} linkto='/organizations' ki-icon='graph-settings' />}
+          {customSessionInstance.hasAccess("shiny_dashboard") && <DrawerLink label={t('Dashboard')} linkto='/shiny_dashboard' ki-icon='report' />}
         </bem.KDrawer__primaryIcons>
         {showExtraMenu&&
         <bem.KDrawer__sidebar>
@@ -147,7 +152,9 @@ class Drawer extends Reflux.Component {
             ? <LibrarySidebar />
               : this.isForms() && customSessionInstance.hasAccess("forms_view")?
                 <FormSidebar />
-                : <div/>
+                : this.isShiny() && customSessionInstance.hasAccess("shiny_dashboard")?
+                  <ShinyMenu baseURL={`${SUPPORT_API_BASE_URL}`} />
+                  : <div/>
           }
         </bem.KDrawer__sidebar>
         }

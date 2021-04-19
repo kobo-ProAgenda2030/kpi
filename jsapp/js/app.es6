@@ -54,7 +54,8 @@ import permConfig from 'js/components/permissions/permConfig';
 import {ROUTES} from 'js/constants';
 import {OrganizationBody} from 'kpi-custom-modules/lib/modules/organizations/OrganizationScreen';
 import {UserBody} from 'kpi-custom-modules/lib/modules/users/UserScreen';
-import {SUPPORT_API_BASE_URL} from './support-api-constants';
+import {ShinyMain} from 'kpi-custom-modules/lib/modules/shiny/ShinyMain';
+import {SUPPORT_API_BASE_URL,SUPPORT_API_SHINY_BASE_URL} from './support-api-constants';
 import {customSessionInstance} from 'kpi-custom-modules/lib/session/CustomSession'
 
 class App extends React.Component {
@@ -121,7 +122,9 @@ class App extends React.Component {
       pageWrapperModifiers[`is-modal-${this.state.pageState.modal.type}`] = true;
     }
 
-    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view"))&&(this.isLibrary()||this.isForms())
+    const showExtraMenu=(customSessionInstance.hasAccess("forms_view")||customSessionInstance.hasAccess("library_view")||customSessionInstance.hasAccess("shiny_dashboard"))
+    &&
+    (this.isLibrary()||this.isForms()||this.isShiny())
     return (
       <DocumentTitle title='KoBoToolbox'>
         <React.Fragment>
@@ -313,11 +316,11 @@ export var routes =()=> (
           </Route>
 
           {/**
-            * TODO change this HACKFIX to a better solution
-            *
-            * Used to force refresh form sub routes. It's some kine of a weird
-            * way of introducing a loading screen during sub route refresh.
-            **/}
+           * TODO change this HACKFIX to a better solution
+           *
+           * Used to force refresh form sub routes. It's some kine of a weird
+           * way of introducing a loading screen during sub route refresh.
+           **/}
           <Route path={ROUTES.FORM_RESET} component={FormSubScreens} />
 
           <IndexRedirect to={ROUTES.FORM_LANDING} />
@@ -332,6 +335,9 @@ export var routes =()=> (
 }
 {customSessionInstance.hasAccess("organizations_view") &&
     <Route path='organizations' component={()=>(<OrganizationBody baseURL={`${SUPPORT_API_BASE_URL}`}/>)}/>
+}
+{customSessionInstance.hasAccess("shiny_dashboard") &&
+    <Route path='shiny_dashboard' component={()=>(<ShinyMain shinyDashboardUrl={`${SUPPORT_API_SHINY_BASE_URL}`}/>)}/>
 }
     <Route path='*' component={SectionNotFound} />
   </Route>

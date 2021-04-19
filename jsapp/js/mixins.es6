@@ -791,6 +791,9 @@ mixins.contextRouter = {
   },
   isForms() {
     return this.context.router.isActive(ROUTES.FORMS);
+  },
+  isShiny() {
+    return this.context.router.isActive("/shiny_dashboard");
   }
 };
 
