@@ -286,7 +286,7 @@ class MainHeader extends Reflux.Component {
             }
             {this.renderAccountNavMenu()}
           </div>
-          {this.renderGitRevInfo()}
+          {/* {this.renderGitRevInfo()} */}
         </bem.MainHeader>
       );
   }

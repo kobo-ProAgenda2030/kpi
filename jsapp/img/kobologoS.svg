@@ -1,17 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="320px" height="320px" viewBox="0 0 320 320" enable-background="new 0 0 320 320" xml:space="preserve">
-<g>
-	<path fill-rule="evenodd" clip-rule="evenodd" fill="#2196F3" d="M162.229,268.843H44.398c-11.46,0-20.751-9.291-20.751-20.751
-		V60.928c0-11.461,9.291-20.752,20.751-20.752h117.831c11.461,0,20.751,9.291,20.751,20.752v187.164
-		C182.98,259.552,173.69,268.843,162.229,268.843"/>
-	<path fill-rule="evenodd" clip-rule="evenodd" fill="#FFFFFF" d="M125.25,221.51H82.044c-11.265,0-20.397-9.132-20.397-20.396
-		v-93.207c0-11.265,9.132-20.397,20.397-20.397h43.206c11.265,0,20.397,9.132,20.397,20.397v93.207
-		C145.647,212.378,136.515,221.51,125.25,221.51"/>
-	<path fill-rule="evenodd" clip-rule="evenodd" fill="#2196F3" d="M110.811,196.843H96.483c-10.771,0-19.503-8.731-19.503-19.503
-		v-44.994c0-10.771,8.732-19.503,19.503-19.503h14.327c10.771,0,19.503,8.732,19.503,19.503v44.994
-		C130.313,188.111,121.582,196.843,110.811,196.843"/>
-</g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="159.33" height="228.67" viewBox="0 0 159.33 228.67"><defs><style>.a{clip-path:url(#b);}.b{fill:#31ade0;}.c{fill:#0a5481;}</style><clipPath id="b"><rect width="159.33" height="228.67"/></clipPath></defs><g id="a" class="a"><g transform="translate(-397.145 -277.45)"><path class="b" d="M440.4,376l28.744-50.407.417-.694.417.694,38.048,66.7a45.2,45.2,0,0,1,4.4,10.739C488.4,417.567,464.377,378.593,440.4,376Z" transform="translate(-17.618 0)"/><path class="c" d="M427.9,542.014a44.407,44.407,0,0,0,34.53,17.08h.833A44.332,44.332,0,0,0,507.144,516C480.714,497.717,454.33,546.226,427.9,542.014Z" transform="translate(-10.904 -100.424)"/><path class="b" d="M486.844,542.014a44.407,44.407,0,0,1-34.53,17.08h-.833A44.332,44.332,0,0,1,407.6,516C434.076,497.717,460.46,546.226,486.844,542.014Z" transform="translate(0 -100.424)"/><path class="c" d="M482.823,376l-28.744-50.407-.417-.694-.417.694-38.048,66.7a45.205,45.205,0,0,0-4.4,10.739C434.823,417.567,458.8,378.593,482.823,376Z" transform="translate(-1.719 0)"/></g></g></svg>

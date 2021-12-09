@@ -7,7 +7,7 @@ $mdl-layout-width: 1440px;
 }
 
 .mdl-layout {
-  max-width: $mdl-layout-width;
+  max-width: auto;
   margin: 0 auto;
   overflow: hidden;
 }

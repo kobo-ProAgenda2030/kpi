@@ -158,7 +158,7 @@ class Drawer extends Reflux.Component {
           }
         </bem.KDrawer__sidebar>
         }
-        <bem.KDrawer__secondaryIcons>
+        {/* <bem.KDrawer__secondaryIcons>
           { stores.session.currentAccount &&
             <IntercomHelpBubble/>
           }
@@ -181,7 +181,7 @@ class Drawer extends Reflux.Component {
               <i className='k-icon k-icon-github' />
             </a>
           }
-        </bem.KDrawer__secondaryIcons>
+        </bem.KDrawer__secondaryIcons> */}
       </bem.KDrawer>
       );
   }
